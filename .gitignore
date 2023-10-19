@@ -1,4 +1,5 @@
 /.venv/
 /mkosi.tools/
 /mkosi.crt
+/mkosi.der
 /mkosi.key
