@@ -1,4 +1,0 @@
-#!/bin/sh
-
-rm -rf "${BUILDROOT}"/usr/share/factory/etc
-cp --archive --recursive --no-target-directory --reflink=auto "${BUILDROOT}"/etc "${BUILDROOT}"/usr/share/factory/etc
