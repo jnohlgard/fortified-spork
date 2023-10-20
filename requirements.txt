@@ -1,0 +1,3 @@
+mkosi @ git+https://github.com/systemd/mkosi.git
+setuptools
+wheel
