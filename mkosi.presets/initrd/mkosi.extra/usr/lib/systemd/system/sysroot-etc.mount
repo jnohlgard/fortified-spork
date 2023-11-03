@@ -1,0 +1,21 @@
+[Unit]
+Description=Provide system-specific configuration as an overlay over the factory configuration
+Documentation=https://www.kernel.org/doc/html/latest/filesystems/overlayfs.html
+Documentation=man:tmpfiles.d(5)
+Documentation=man:file-hierarchy(7)
+RequiresMountsFor=/sysroot/var/etc
+RequiresMountsFor=/sysroot
+DefaultDependencies=no
+Before=umount.target
+Conflicts=umount.target
+After=local-fs-pre.target
+Before=initrd-fs.target
+
+[Mount]
+What=overlay
+Where=/sysroot/etc
+Type=overlay
+Options=lowerdir=/sysroot/etc,upperdir=/sysroot/var/etc/upperdir,workdir=/sysroot/var/etc/workdir
+
+[Install]
+RequiredBy=initrd-fs.target
