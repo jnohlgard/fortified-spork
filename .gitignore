@@ -3,3 +3,8 @@
 /mkosi.crt
 /mkosi.der
 /mkosi.key
+/mkosi.rootpw
+# Disk images
+*.raw
+# temporary workspaces
+.mkosi-*/
