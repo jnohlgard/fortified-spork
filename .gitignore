@@ -6,5 +6,6 @@
 /mkosi.rootpw
 # Disk images
 *.raw
+/disks/
 # temporary workspaces
 .mkosi-*/
