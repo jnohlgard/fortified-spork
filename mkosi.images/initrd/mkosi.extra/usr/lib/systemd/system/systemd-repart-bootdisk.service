@@ -1,0 +1,27 @@
+[Unit]
+Description=Repartition security drive
+Documentation=man:systemd-repart(8)
+DefaultDependencies=no
+Conflicts=shutdown.target
+Wants=modprobe@loop.service modprobe@dm_mod.service
+After=modprobe@loop.service modprobe@dm_mod.service
+Before=initrd-usr-fs.target initrd-root-fs.target shutdown.target
+ConditionVirtualization=!container
+ConditionDirectoryNotEmpty=|/usr/lib/repart.d
+ConditionDirectoryNotEmpty=|/usr/local/lib/repart.d
+ConditionDirectoryNotEmpty=|/etc/repart.d
+ConditionDirectoryNotEmpty=|/run/repart.d
+ConditionDirectoryNotEmpty=|/sysroot/usr/lib/repart.d
+ConditionDirectoryNotEmpty=|/sysroot/usr/local/lib/repart.d
+ConditionDirectoryNotEmpty=|/sysroot/etc/repart.d
+ConditionDirectoryNotEmpty=|/sysusr/usr/lib/repart.d
+ConditionDirectoryNotEmpty=|/sysusr/usr/local/lib/repart.d
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/systemd-repart --dry-run=no /dev/sda
+
+# The tool returns 77 if there's no existing GPT partition table
+SuccessExitStatus=77
+

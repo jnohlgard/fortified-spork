@@ -1,0 +1,31 @@
+#!/usr/bin/sh
+set -eu
+
+printf 'Creating early CPU microcode archives...\n'
+
+# see https://kernel.org/doc/html/next/x86/microcode.html for more info
+ucode_path=kernel/x86/microcode
+tmp_workdir="$(mktemp -d -p "${OUTPUTDIR}" -t .tmp-ucode.XXXXXXXX)"
+[ -n "${tmp_workdir}" ]
+[ -d "${tmp_workdir}" ]
+
+trap "rm -rfv '${tmp_workdir}'" EXIT
+
+mkdir -p "${tmp_workdir}/${ucode_path}"
+
+for prefix in "${BUILDROOT}" "${BUILDROOT}"/usr "${SRCDIR}" /usr /; do
+  if [ -d "${prefix}"/lib/firmware/amd-ucode ]; then
+    cat "${prefix}"/lib/firmware/amd-ucode/microcode_amd*.bin > "${tmp_workdir}/${ucode_path}/AuthenticAMD.bin"
+    break
+  fi
+done
+
+for prefix in "${BUILDROOT}" "${BUILDROOT}"/usr "${SRCDIR}" /usr /; do
+  if [ -d "${prefix}"/lib/firmware/intel-ucode ]; then
+    cat "${prefix}"/lib/firmware/intel-ucode/* > "${tmp_workdir}/${ucode_path}/GenuineIntel.bin"
+    break
+  fi
+done
+
+( cd "${tmp_workdir}" && find . | cpio -o -H newc > "${OUTPUTDIR}/early-ucode.cpio" )
+

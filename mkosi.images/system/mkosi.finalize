@@ -1,0 +1,42 @@
+#!/bin/sh
+set -eu
+
+if [ "${container:-}" != "mkosi" ]; then
+  exec mkosi-chroot "${CHROOT_SCRIPT}" "$@"
+fi
+
+printf 'Enabling nss-altfiles for passwd and group\n'
+set -x
+cp -v /etc/passwd /etc/group /usr/lib/
+# Only keep root in the primary passwd file, the rest can be found using nss-altfiles
+getent passwd root > /etc/passwd.new
+mv -Z -v /etc/passwd.new /etc/passwd
+# Only keep groups that are relevant to human users
+getent group wheel sudo root adm users dialout libvirt usb video audio | sort -t: -k3 -g > /etc/group.new || true
+if [ -s '/etc/group.new' ]; then
+  mv -Z -v /etc/group.new /etc/group
+else
+  rm -f /etc/group.new
+fi
+authselect enable-feature with-altfiles
+authselect current
+authselect check
+
+# Masking dnsmasq.service is recommended in Fedora/RHEL documentation when
+# using high level network configuration management tools (NetworkManager,
+# systemd-networkd...)
+systemctl mask dnsmasq.service
+# Masking docker.socket to avoid accidental activation in the future
+systemctl mask docker.socket
+
+set +x
+printf 'Injecting values in /etc/os-release\n'
+set -x
+sed -i '/^IMAGE_ID=/d;/^IMAGE_VERSION=/d' /etc/os-release
+printf '%s\n' "IMAGE_ID=${IMAGE_ID}" "IMAGE_VERSION=${IMAGE_VERSION}" >> /etc/os-release
+
+set +x
+printf 'Stashing original /etc state to /usr/share/factory/etc/\n'
+set -x
+rm -rf /usr/share/factory/etc
+cp --archive --no-target-directory --reflink=auto /etc /usr/share/factory/etc
