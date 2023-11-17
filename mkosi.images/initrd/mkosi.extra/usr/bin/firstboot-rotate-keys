@@ -1,0 +1,55 @@
+#!/usr/bin/sh
+set -eu
+
+if [ $# -ne 1 ]; then
+  >&2 printf 'Usage: %s <device>\n' "${0##*/}"
+  >&2 printf 'Perform first boot key rotation if necessary\n'
+  exit 2
+fi
+
+blkdev="$1";shift
+
+reencrypt_cipher=serpent-xts-plain64
+
+if ! cryptsetup isLuks "${blkdev}"; then
+  >&2 printf '%s is not a LUKS device\n' "${blkdev}"
+  exit 1
+fi
+
+if ! printf '\n' | cryptsetup --test-passphrase --disable-external-tokens open "${blkdev}"; then
+  printf '%s can not be unlocked with an empty passphrase, ignoring disk\n' "${blkdev}"
+  exit 0
+fi
+
+printf '%s can be unlocked with an empty passphrase, correcting.\n' "${blkdev}"
+
+printf 'Rotating volume key on %s. This will take some time...\n' "${blkdev}"
+time printf '\n' | cryptsetup reencrypt \
+  --cipher "${reencrypt_cipher}" \
+  --progress-frequency=1 \
+  "${blkdev}"
+printf 'Reencryption completed.\n'
+
+printf 'Enrolling TPM2 for this machine.\n'
+tpm2_public_key=/run/systemd/tpm2-pcr-public-key.pem 
+tpm2_signature=/run/systemd/tpm2-pcr-signature.json 
+tpm2_signed_pcrs=11
+tpm2_specific_pcrs=7
+systemd-cryptenroll --unlock-key-file=/dev/null \
+  --tpm2-device=auto \
+  --tpm2-public-key="${tpm2_public_key}" \
+  --tpm2-signature="${tpm2_signature}" \
+  --tpm2-public-key-pcrs="${tpm2_signed_pcrs}" \
+  --tpm2-pcrs="${tpm2_specific_pcrs}" \
+  "${blkdev}"
+
+printf 'Enrolling FIDO2 token. You may need to enter the device PIN.\n'
+systemd-cryptenroll --unlock-key-file=/dev/null \
+  --fido2-device=auto \
+  "${blkdev}"
+
+printf 'Adding random recovery key and removing empty passphrase\n'
+systemd-cryptenroll --unlock-key-file=/dev/null \
+  --recovery-key \
+  --wipe-slot=empty \
+  "${blkdev}"

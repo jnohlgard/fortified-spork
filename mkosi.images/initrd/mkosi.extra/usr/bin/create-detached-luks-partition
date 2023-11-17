@@ -1,0 +1,176 @@
+#!/usr/bin/sh
+set -eu
+
+die() {
+  if [ $# -gt 0 ]; then
+    >&2 printf "$0"
+  fi
+  exit 1
+}
+
+usage() {
+  printf 'Usage: %s <partition> [extra cryptsetup luksFormat args]\n' "${0##*/}"
+  printf 'Create a detached header and format the given partition\n'
+}
+
+if [ $# -lt 1 ]; then
+  usage >&2
+  exit 2
+fi
+
+if [ "$1" = '--help' ]; then
+  usage
+  exit 0
+fi
+
+part_uuid_from_blkdev() {
+  if [ $# -ne 1 ] || [ -z "$1" ]; then
+    die 'Usage: part_uuid_from_blkdev <block_dev>\n'
+  fi
+  local partition="$1"
+  if ! test -b "${partition}"; then
+    >&2 printf 'Warning: %s is not a block device\n'
+  fi
+  local part_uuid=''
+  if command -v blkid &>/dev/null; then
+    part_uuid="$(blkid -o value -s PART_ENTRY_UUID -p "${partition}")"
+    if [ -z "${part_uuid}" ]; then
+      # Try again without direct probing
+      part_uuid="$(blkid -o value -s PARTUUID "${partition}")"
+    fi
+  fi
+  if [ -z "${part_uuid}" ]; then
+    if command -v udevadm &>/dev/null; then
+      part_uuid="$(udevadm info -q property --value --property ID_PART_ENTRY_UUID "${partition}")"
+    fi
+  fi
+  if [ -z "${part_uuid}" ]; then
+    if command -v lsblk &>/dev/null; then
+      part_uuid="$(lsblk -o PARTUUID -n "${partition}")"
+    fi
+  fi
+  if [ -z "${part_uuid}" ]; then
+    # Fall back to using the file name
+    part_uuid="${partition##*/}"
+  fi
+  if [ -z "${part_uuid}" ]; then
+    die 'Failed to figure out the partition UUID for %s\n' "${partition}"
+  fi
+  printf '%s' "${part_uuid}" | tr -cd '[:alnum:]-'
+}
+
+random_number_in_range() {
+  if [ $# -ne 1 ]; then
+    die 'Usage: random_number_in_range <min-max>\n'
+  fi
+  shuf -i "$1" -n 1
+}
+
+blkdev="$1"
+
+if cryptsetup isLuks "${blkdev}"; then
+  die '%s contains a LUKS header\n' "${blkdev}"
+fi
+
+trap 'die "Something went wrong\n"' QUIT ABRT INT TERM
+
+part_uuid="$(part_uuid_from_blkdev "${blkdev}")"
+header_file="$(systemd-path system-state-private)/lukshdrs/${part_uuid}.luks"
+luks_mapping="luks-part-${part_uuid}"
+# random starting offset aligned on a 4MB boundary (SSD friendly)
+start_offset="$(random_number_in_range 128-1024)"
+start_offset_mb="$((start_offset * 4))"
+
+if [ -e "${header_file}" ]; then
+  die 'Header file %s already exists, aborting.' "${header_file}"
+fi
+
+if ! cmp /dev/zero "${blkdev}" -n 8G; then
+  die '%s is not zeroed\nUse blkdiscard <device> to completely wipe the device.\n' "${blkdev}"
+fi
+
+printf 'Discarding all blocks on %s\n' "${blkdev}"
+yesno="$(systemd-ask-password --emoji=no -e "WARNING! THIS WILL ERASE EVERYTHING ON DEVICE ${blkdev}! Do you want to continue? (answer with uppercase 'yes')")"
+if [ "${yesno:-}" != 'YES' ]; then
+  die 'Aborting due to user input\n'
+fi
+
+# Using a medium discard block size to avoid errors when running in QEMU
+blkdiscard -v -p 1G "${blkdev}"
+
+wipedev="tmp-cryptwipe-${RANDOM}"
+
+printf 'Writing white noise to leading 8 GiB of device %s (via dm-crypt mapping %s)\n' "${blkdev}" "${wipedev}"
+# Write random junk in the leading GBs of the drive for hiding the true
+# beginning of the encrypted data
+cryptsetup open --type plain \
+  --key-file /dev/urandom \
+  --keyfile-size 64 \
+  --sector-size 4096 \
+  --cipher aes-xts-plain64 \
+  --key-size 512 \
+  "${blkdev}" \
+  "${wipedev}"
+
+time dd if=/dev/zero of="/dev/mapper/${wipedev}" bs=16M count=512K status=progress
+
+cryptsetup close "${wipedev}"
+
+printf 'Creating detached LUKS2 header\n'
+keyfile_tmp="$(mktemp -t detached-luks-temporary-keyfile-XXXXXXXX.bin)"
+dd if=/dev/urandom bs=128 count=1 of="${keyfile_tmp}"
+# need to specify --luks2-keyslots-size to avoid having a multi-GB header file
+# when the data device offset is large.
+# --offset must be given in 512 byte sectors.
+cryptsetup luksFormat --type luks2 \
+  --header "${header_file}" \
+  --luks2-keyslots-size 16352k \
+  --luks2-metadata-size 16k \
+  --offset "$((start_offset_mb * 2048))" \
+  "${blkdev}" \
+  "$@"
+
+printf 'Binding encryption to the TPM2 chip in this machine and using this UKI and initrd only\n'
+systemd-cryptenroll --unlock-key-file="${keyfile_tmp}" \
+  --tpm2-device=auto \
+  --tpm2-pcrs=7+11 \
+  "${header_file}"
+
+printf 'Adding FIDO2 enrollment as a recovery unlock method\n'
+systemd-cryptenroll --unlock-key-file="${keyfile_tmp}" \
+  --fido2-device=auto \
+  "${header_file}"
+
+printf 'Enable discards\n'
+cryptsetup open --type luks2 \
+  --header "${header_file}" \
+  --persistent \
+  --allow-discards \
+  "${blkdev}" \
+  "${luks_mapping}"
+cryptsetup close "${luks_mapping}"
+
+printf 'Wiping temporary key file and adding recovery passphrase\n'
+systemd-cryptenroll \
+  --wipe-slot=0 \
+  --unlock-fido2-device=auto \
+  --recovery-key \
+  "${header_file}"
+
+# Shred the temporary key since we don't need it anymore
+shred -z -u "${keyfile_tmp}"
+
+printf '\n\n'
+printf '%s\n' \
+  'Next steps:' \
+  '1. Write down the recovery key above on paper!' \
+  '2. Create file system on encrypted device.' \
+  '3. Make backups of this USB drive.' \
+  '' \
+  '=========================================' \
+  '| WRITE DOWN THE RECOVERY KEY ON PAPER! |' \
+  '=========================================' \
+  ''
+
+printf 'All done!\n'
+
