@@ -7,4 +7,4 @@ fi
 
 printf 'Selecting system images to include on the install disk\n'
 mkdir -p /images/
-cp -v --reflink=auto --sparse=always --archive "/mkosi.output/spork_${IMAGE_VERSION}."* /images/
+cp -v --reflink=auto --sparse=auto --archive "/mkosi.output/spork_${IMAGE_VERSION}."* /images/
