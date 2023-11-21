@@ -1,10 +1,13 @@
 #!/bin/sh
 set -eu
 
-if [ "${container:-}" != "mkosi" ]; then
-  exec mkosi-chroot "${CHROOT_SCRIPT}" "$@"
-fi
+# wipe any root password (from mkosi.rootpw or other) from system image
+# and disable root logins by default
+printf 'Disable root logins\n'
+set -x
+usermod -p '!' root
 
+set +x
 printf 'Enabling nss-altfiles for passwd and group\n'
 set -x
 cp -v /etc/passwd /etc/group /usr/lib/
@@ -18,6 +21,7 @@ if [ -s '/etc/group.new' ]; then
 else
   rm -f /etc/group.new
 fi
+
 authselect enable-feature with-altfiles
 authselect current
 authselect check
@@ -40,3 +44,11 @@ printf 'Stashing original /etc state to /usr/share/factory/etc/\n'
 set -x
 rm -rf /usr/share/factory/etc
 cp --archive --no-target-directory --reflink=auto /etc /usr/share/factory/etc
+
+set +x
+printf 'Creating skeleton root directory\n'
+set -x
+mkdir -p /sysroot/etc
+cp /usr/share/factory/etc/{passwd,group} /sysroot/etc/
+systemd-tmpfiles --root /sysroot/ --graceful --create /usr/lib/tmpfiles.d/spork-sysroot.conf
+rm /sysroot/etc/{passwd,group}

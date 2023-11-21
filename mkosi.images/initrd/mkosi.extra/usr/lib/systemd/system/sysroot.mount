@@ -1,0 +1,14 @@
+[Unit]
+Description=Root Partition
+Before=initrd-root-fs.target
+Requires=systemd-fsck-root.service
+After=systemd-fsck-root.service
+After=blockdev@dev-vg\x2dsys-root.target
+Wants=sysroot-etc.mount
+Before=sysroot-etc.mount
+Wants=sysroot-usr.mount
+Before=sysroot-usr.mount
+
+[Mount]
+What=/dev/vg-sys/root
+Options=nodev,nosuid,noexec

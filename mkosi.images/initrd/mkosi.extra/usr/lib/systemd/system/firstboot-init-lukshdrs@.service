@@ -1,0 +1,16 @@
+[Unit]
+Description=Initialize disk encryption on device %f
+Wants=cryptsetup-pre.target
+After=cryptsetup-pre.target
+Before=cryptsetup.target
+Requires=%i.device
+After=blockdev@%i.target
+Before=blockdev@dev-mapper-lukshdrs.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecCondition=sh -c '! cryptsetup isLuks "%f"'
+ExecCondition=sh -c '[ "$$(systemd-ask-password -e "Do you want to format %f to initialize the boot stick? (reply with upper case yes")" = "YES" ]'
+ExecStart=/usr/libexec/firstboot-init-lukshdrs "%f"
+

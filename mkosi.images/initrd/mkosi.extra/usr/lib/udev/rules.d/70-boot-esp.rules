@@ -1,4 +1,0 @@
-# Set the boot-esp symlink
-ENV{ID_PART_ENTRY_SCHEME}=="gpt", \
-  ENV{ID_PART_ENTRY_TYPE}=="bc13c2ff-59e6-4262-a352-b275fd6f7172", \
-  SYMLINK+="disk/by-id/boot-esp"

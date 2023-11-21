@@ -1,0 +1,14 @@
+[Unit]
+Description=Enroll hardware tokens for encryption
+Requires=%i.device
+After=blockdev@%i.target
+After=systemd-repart-bootdisk.service
+Wants=firstboot-rotate-keys@%i.service
+Before=firstboot-rotate-keys@%i.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecCondition=sh -c 'echo | cryptsetup open --test-passphrase --disable-external-tokens --key-file=- "%I"'
+ExecStart=systemd-cryptenroll --unlock-key-file=/dev/null --fido2-device=auto --wipe-slot=empty "%I"
+

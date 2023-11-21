@@ -1,3 +1,0 @@
-[Unit]
-Wants=create-boot-esp-device-link.service
-After=create-boot-esp-device-link.service

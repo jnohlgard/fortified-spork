@@ -6,8 +6,8 @@ Conflicts=shutdown.target
 Wants=modprobe@loop.service modprobe@dm_mod.service
 After=modprobe@loop.service modprobe@dm_mod.service
 Before=initrd-usr-fs.target initrd-root-fs.target shutdown.target
-Requires=dev-disk-by\x2did-boot\x2desp.device
-After=dev-disk-by\x2did-boot\x2desp.device
+Requires=dev-disk-by\x2dpartlabel-lukshdrs.device
+After=dev-disk-by\x2dpartlabel-lukshdrs.device
 ConditionVirtualization=!container
 ConditionFirmware=uefi
 ConditionDirectoryNotEmpty=|/usr/lib/repart.d
@@ -18,7 +18,7 @@ ConditionDirectoryNotEmpty=|/run/repart.d
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/bin/systemd-repart --root=/ --dry-run=no /dev/disk/by-id/boot-esp
+ExecStart=/usr/bin/systemd-repart --root=/ --dry-run=no /dev/disk/by-partlabel/lukshdrs
 
 # The tool returns 77 if there's no existing GPT partition table
 SuccessExitStatus=77

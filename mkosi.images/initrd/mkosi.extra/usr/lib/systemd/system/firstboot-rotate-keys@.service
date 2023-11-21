@@ -1,0 +1,12 @@
+[Unit]
+Description=Rotate volume encryption keys on %I
+Before=cryptsetup-pre.target
+Before=initrd-fs.target
+Requires=%i.device
+After=blockdev@%i.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/libexec/firstboot-rotate-keys %I
+

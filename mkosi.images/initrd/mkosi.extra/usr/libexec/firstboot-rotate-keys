@@ -1,0 +1,31 @@
+#!/usr/bin/sh
+set -eu
+
+if [ $# -ne 1 ]; then
+  >&2 printf 'Usage: %s <device>\n' "${0##*/}"
+  >&2 printf 'Perform first boot key rotation if necessary\n'
+  exit 2
+fi
+
+blkdev="$1";shift
+
+: "${REENCRYPT_CIPHER:=serpent-xts-plain64}"
+
+if ! cryptsetup isLuks "${blkdev}"; then
+  >&2 printf '%s is not a LUKS device\n' "${blkdev}"
+  exit 1
+fi
+
+if ! printf '\n' | cryptsetup --test-passphrase --disable-external-tokens open "${blkdev}"; then
+  printf '%s can not be unlocked with an empty passphrase, ignoring disk\n' "${blkdev}"
+  exit 0
+fi
+
+printf '%s can be unlocked with an empty passphrase, rotating keys before setting up tokens.\n' "${blkdev}"
+
+printf 'Rotating volume key on %s. This will take some time...\n' "${blkdev}"
+time printf '\n' | cryptsetup reencrypt \
+  --cipher "${REENCRYPT_CIPHER}" \
+  --progress-frequency=1 \
+  "${blkdev}"
+printf 'Reencryption complete.\n'

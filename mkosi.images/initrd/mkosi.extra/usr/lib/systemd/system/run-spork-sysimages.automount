@@ -1,0 +1,5 @@
+[Unit]
+Description=sysimages
+Wants=blockdev@dev-mapper-sysimages.target
+After=blockdev@dev-mapper-sysimages.target
+BindsTo=dev-mapper-sysimages.device

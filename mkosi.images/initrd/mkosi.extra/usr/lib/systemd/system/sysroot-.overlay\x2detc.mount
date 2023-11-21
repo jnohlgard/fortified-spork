@@ -1,0 +1,8 @@
+[Unit]
+Description=/etc upper backing store
+
+[Mount]
+What=/dev/vg-sys/etc
+Type=xfs
+# NB: Mounting read-only by default, but it is overridable by root using mount -o remount,rw /etc
+Options=ro,nosuid,nodev

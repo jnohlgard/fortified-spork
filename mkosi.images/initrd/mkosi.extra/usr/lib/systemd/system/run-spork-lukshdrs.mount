@@ -1,0 +1,10 @@
+[Unit]
+Description=lukshdrs
+Wants=blockdev@dev-mapper-lukshdrs.target
+After=blockdev@dev-mapper-lukshdrs.target
+BindsTo=dev-mapper-lukshdrs.device
+
+[Mount]
+What=/dev/mapper/lukshdrs
+Type=xfs
+LazyUnmount=yes

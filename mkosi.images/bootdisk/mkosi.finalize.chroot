@@ -1,10 +1,6 @@
 #!/usr/bin/sh
 set -eu
 
-if [ "${container:-}" != "mkosi" ]; then
-  exec mkosi-chroot "${CHROOT_SCRIPT}" "$@"
-fi
-
 printf 'Selecting system images to include on the install disk\n'
 mkdir -p /images/
 cp -v --reflink=auto --sparse=auto --archive "/mkosi.output/spork_${IMAGE_VERSION}."* /images/

@@ -1,0 +1,25 @@
+#!/usr/bin/sh
+set -eu
+
+if [ $# -lt 1 ]; then
+  printf 'Usage: %s <output-dir> [early-dir] [late-dir]\n' "${0##*/}"
+  exit 2
+fi
+
+outdir="$1";shift
+lukshdrs_path="/run/spork/lukshdrs/"
+
+mkdir -p "${outdir}/cryptsetup.target.wants/"
+
+for header_file in "${lukshdrs_path}"/*.luks; do
+  header="${header_file##*/}"
+  partuuid="${header%.luks}"
+  partuuid_escaped="$(systemd-escape "${partuuid}")"
+  luks_name="luks-part-${partuuid}"
+  luks_name_escaped="$(systemd-escape "${luks_name}")"
+  mkdir -p "${outdir}/blockdev@dev-mapper-${luks_name_escaped}.wants"
+  ln -sf "../lukshdrs-cryptsetup@${partuuid_escaped}.service" \
+    "${outdir}/blockdev@dev-mapper-${luks_name_escaped}.wants/"
+  ln -sf "../lukshdrs-cryptsetup@${partuuid_escaped}.service" \
+    "${outdir}/cryptsetup.target.wants/"
+done

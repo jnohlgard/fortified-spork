@@ -2,7 +2,7 @@
 set -eu
 
 if [ $# -ne 1 ] || [ "$1" = '--help' ]; then
-  >&2 printf 'Usage: %s <partition>\n' "${0##*/}"
+  printf 'Usage: %s <partition>\n' "${0##*/}"
   exit 2
 fi
 
@@ -15,10 +15,17 @@ integrity_algo=hmac-sha256
 blkdev="$1";shift
 luks_label=lukshdrs
 
+current_fstype="$(lsblk -r -o FSTYPE -d -n "${blkdev}")"
+if [ -n "${current_fstype}" ]; then
+  >&2 printf 'Error: %s already contains a file system of type %s!\n' "${blkdev}" "${current_fstype}"
+  exit 1
+fi
+
 keyfile_tmp="$(mktemp -t lukshdrs-temporary-keyfile-XXXXXXXX.bin)"
 dd if=/dev/urandom bs=128 count=1 of="${keyfile_tmp}"
 
-cryptsetup luksFormat --type luks2 \
+printf 'Creating LUKS header on %s\n' "${blkdev}"
+cryptsetup luksFormat --batch-mode --type luks2 \
   --key-file "${keyfile_tmp}" \
   --key-slot=0 \
   --label "${luks_label}" \
@@ -27,8 +34,12 @@ cryptsetup luksFormat --type luks2 \
   --integrity "${integrity_algo}" \
   "${blkdev}"
 
-cryptsetup open --key-file "${keyfile_tmp}" "${luks_label}"
-mkfs.xfs -m rmapbt=1 -L "${luks_label}" "/dev/mapper/${luks_label}"
+printf 'Open newly formatted device %s as dm-crypt mapping %s\n' "${blkdev}" "${luks_label}"
+cryptsetup open --key-file "${keyfile_tmp}" "${blkdev}" "${luks_label}"
+crypt_dev="/dev/mapper/${luks_label}"
+printf 'Format encrypted device %s as XFS\n' "${crypt_dev}"
+mkfs.xfs -m rmapbt=1 -L "${luks_label}" "${crypt_dev}"
+printf 'Disable dm-crypt mapping %s\n' "${luks_label}"
 cryptsetup close "${luks_label}"
 
 printf 'Enrolling FIDO2 key for encryption unlocking, you may need to enter your FIDO pin next\n'
@@ -36,11 +47,6 @@ systemd-cryptenroll --unlock-key-file="${keyfile_tmp}" \
   --fido2-device=auto \
   --fido2-with-client-pin=yes \
   --fido2-with-user-presence=yes \
-  "${blkdev}"
-
-# Create a recovery passphrase and wipe the temporary key
-systemd-cryptenroll --unlock-key-file="${keyfile_tmp}" \
-  --recovery-key \
   --wipe-slot=0 \
   "${blkdev}"
 
@@ -50,7 +56,7 @@ shred -z -u "${keyfile_tmp}"
 printf '\n\n'
 printf '%s\n' \
   'Next steps:' \
-  '1. Write down the recovery key above on paper!' \
+  '1. Create a recovery key for the lukshdrs partition!' \
   '2. Create root partition on SSD/HDD' \
   '3. Make backups of this USB drive.' \
   '' \
