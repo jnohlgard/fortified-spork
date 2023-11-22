@@ -1,8 +1,6 @@
 #!/usr/bin/sh
 set -eu
 
-# wipe any root password (from mkosi.rootpw or other) from system image
-# and disable root logins by default
-printf 'Disable root logins\n'
+printf 'Open root logins\n'
 set -x
-usermod -p '!' root
+usermod -p '' root
