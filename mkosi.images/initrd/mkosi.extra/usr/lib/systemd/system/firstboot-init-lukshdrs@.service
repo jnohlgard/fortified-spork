@@ -1,16 +1,26 @@
 [Unit]
 Description=Initialize disk encryption on device %f
+DefaultDependencies=no
+Wants=modprobe@dm_crypt.service
+After=modprobe@dm_crypt.service
+After=systemd-udevd-kernel.socket
+Requires=%i.device
+After=%i.device
+Wants=systemd-repart-bootdisk.service
+After=systemd-repart-bootdisk.service
 Wants=cryptsetup-pre.target
 After=cryptsetup-pre.target
+Before=systemd-cryptsetup@lukshdrs.service
 Before=cryptsetup.target
-Requires=%i.device
-After=blockdev@%i.target
-Before=blockdev@dev-mapper-lukshdrs.target
+Before=shutdown.target initrd-switch-root.target
+Conflicts=shutdown.target initrd-switch-root.target
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
 ExecCondition=sh -c '! cryptsetup isLuks "%f"'
-ExecCondition=sh -c '[ "$$(systemd-ask-password -e "Do you want to format %f to initialize the boot stick? (reply with upper case yes")" = "YES" ]'
+ExecStartPre=sh -c '[ "$$(systemd-ask-password -e "Do you want to format %f to initialize the boot stick? (reply with upper case yes")" = "YES" ]'
 ExecStart=/usr/libexec/firstboot-init-lukshdrs "%f"
 
+[Install]
+WantedBy=initrd-root-device.target

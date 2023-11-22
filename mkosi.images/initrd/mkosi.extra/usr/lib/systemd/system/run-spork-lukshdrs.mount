@@ -1,8 +1,8 @@
 [Unit]
-Description=lukshdrs
-Wants=blockdev@dev-mapper-lukshdrs.target
+Description=Mount %P
 After=blockdev@dev-mapper-lukshdrs.target
 BindsTo=dev-mapper-lukshdrs.device
+After=dev-mapper-lukshdrs.device
 
 [Mount]
 What=/dev/mapper/lukshdrs

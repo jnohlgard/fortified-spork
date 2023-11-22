@@ -8,12 +8,17 @@ fi
 
 outdir="$1";shift
 lukshdrs_path="/run/spork/lukshdrs/"
+if ! [ -d "${lukshdrs_path}" ]; then
+  printf '%s: Missing %s, ignored\n' "${0##*/}" "${lukshdrs_path}"
+  exit 0
+fi
 
 mkdir -p "${outdir}/cryptsetup.target.wants/"
 
-for header_file in "${lukshdrs_path}"/*.luks; do
-  header="${header_file##*/}"
-  partuuid="${header%.luks}"
+lsblk -o PARTUUID -rn | ( while read partuuid; do
+  if ! [ -f "${lukshdrs_path}/${partuuid}.luks" ]; then
+    continue
+  fi
   partuuid_escaped="$(systemd-escape "${partuuid}")"
   luks_name="luks-part-${partuuid}"
   luks_name_escaped="$(systemd-escape "${luks_name}")"
@@ -22,4 +27,4 @@ for header_file in "${lukshdrs_path}"/*.luks; do
     "${outdir}/blockdev@dev-mapper-${luks_name_escaped}.wants/"
   ln -sf "../lukshdrs-cryptsetup@${partuuid_escaped}.service" \
     "${outdir}/cryptsetup.target.wants/"
-done
+done )

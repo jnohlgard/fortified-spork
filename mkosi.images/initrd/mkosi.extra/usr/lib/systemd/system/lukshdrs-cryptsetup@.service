@@ -6,12 +6,13 @@ DefaultDependencies=no
 IgnoreOnIsolate=true
 After=cryptsetup-pre.target systemd-udevd-kernel.socket
 Before=blockdev@dev-mapper-luks\x2dpart\x2d%i.target
-Wants=blockdev@dev-disk-by\x2dpartuuid-%i.target
+Wants=blockdev@dev-mapper-luks\x2dpart\x2d%i.target
+RequiresMountsFor=%t/spork/lukshdrs/
 Conflicts=umount.target
+Before=umount.target
 BindsTo=dev-disk-by\x2dpartuuid-%i.device
 After=dev-disk-by\x2dpartuuid-%i.device
 Before=cryptsetup.target
-Before=umount.target
 
 [Service]
 Type=oneshot

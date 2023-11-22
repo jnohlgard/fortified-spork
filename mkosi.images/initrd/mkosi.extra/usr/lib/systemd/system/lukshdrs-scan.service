@@ -1,0 +1,16 @@
+[Unit]
+Description=Reload systemd to retrigger generators
+DefaultDependencies=no
+After=basic.target
+After=cryptsetup-pre.target
+RequiresMountsFor=/run/spork/lukshdrs/
+Before=cryptsetup.target
+Before=initrd.target
+Before=initrd-fs.target
+Before=initrd-root-device.target
+Before=shutdown.target initrd-switch-root.target
+Conflicts=shutdown.target initrd-switch-root.target
+
+[Service]
+Type=oneshot
+ExecStart=systemctl daemon-reload

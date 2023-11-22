@@ -2,12 +2,15 @@
 Description=Repartition security drive
 Documentation=man:systemd-repart(8)
 DefaultDependencies=no
-Conflicts=shutdown.target
 Wants=modprobe@loop.service modprobe@dm_mod.service
 After=modprobe@loop.service modprobe@dm_mod.service
-Before=initrd-usr-fs.target initrd-root-fs.target shutdown.target
 Requires=dev-disk-by\x2dpartlabel-lukshdrs.device
 After=dev-disk-by\x2dpartlabel-lukshdrs.device
+Wants=cryptsetup-pre.target
+Before=cryptsetup-pre.target
+Before=initrd-usr-fs.target initrd-root-fs.target
+Before=shutdown.target initrd-switch-root.target
+Conflicts=shutdown.target initrd-switch-root.target
 ConditionVirtualization=!container
 ConditionFirmware=uefi
 ConditionDirectoryNotEmpty=|/usr/lib/repart.d
@@ -24,4 +27,4 @@ ExecStart=/usr/bin/systemd-repart --root=/ --dry-run=no /dev/disk/by-partlabel/l
 SuccessExitStatus=77
 
 [Install]
-WantedBy=initrd.target
+WantedBy=initrd-root-device.target

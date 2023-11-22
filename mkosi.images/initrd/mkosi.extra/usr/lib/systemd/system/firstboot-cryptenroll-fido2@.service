@@ -1,14 +1,26 @@
 [Unit]
 Description=Enroll hardware tokens for encryption
+DefaultDependencies=no
+Wants=modprobe@dm_crypt.service
+After=modprobe@dm_crypt.service
+After=systemd-udevd-kernel.socket
 Requires=%i.device
-After=blockdev@%i.target
+After=%i.device
+Wants=systemd-repart-bootdisk.service
 After=systemd-repart-bootdisk.service
 Wants=firstboot-rotate-keys@%i.service
-Before=firstboot-rotate-keys@%i.service
+After=firstboot-rotate-keys@%i.service
+Wants=cryptsetup-pre.target
+Before=cryptsetup-pre.target
+Before=cryptsetup.target
+Before=shutdown.target initrd-switch-root.target
+Conflicts=shutdown.target initrd-switch-root.target
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecCondition=sh -c 'echo | cryptsetup open --test-passphrase --disable-external-tokens --key-file=- "%I"'
-ExecStart=systemd-cryptenroll --unlock-key-file=/dev/null --fido2-device=auto --wipe-slot=empty "%I"
+ExecCondition=sh -c 'echo | cryptsetup open --test-passphrase --disable-external-tokens "%f"'
+ExecStart=systemd-cryptenroll --unlock-key-file=/dev/null --fido2-device=auto --wipe-slot=empty "%f"
 
+[Install]
+WantedBy=initrd-root-device.target

@@ -1,8 +1,11 @@
 [Unit]
 Description=/etc upper backing store
+Before=initrd-fs.target
+Requires=systemd-fsck@dev-vg\x2dsys-etc.service
+After=systemd-fsck@dev-vg\x2dsys-etc.service
+After=blockdev@dev-vg\x2dsys-etc.target
 
 [Mount]
 What=/dev/vg-sys/etc
-Type=xfs
-# NB: Mounting read-only by default, but it is overridable by root using mount -o remount,rw /etc
+# NB: Mounting read-only by default, but it is overridable by root using mount -o remount,rw
 Options=ro,nosuid,nodev

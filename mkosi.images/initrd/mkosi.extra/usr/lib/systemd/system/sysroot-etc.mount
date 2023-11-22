@@ -1,5 +1,6 @@
 [Unit]
 Description=/etc writable overlay
+Before=initrd-fs.target
 RequiresMountsFor=/sysroot/usr/share/factory/etc
 RequiresMountsFor=/sysroot/.overlay-etc/
 
@@ -7,5 +8,5 @@ RequiresMountsFor=/sysroot/.overlay-etc/
 What=overlay
 Type=overlay
 # NB: Mounting read-only by default, but it is overridable by root using mount -o remount,rw /etc
-Options=lowerdir=/sysroot/usr/share/factory/etc,upperdir=/sysroot/.overlay-etc/overlay,workdir=/sysroot/.overlay-etc/workdir,nodev,nosuid,noexec,ro
+Options=lowerdir=/sysroot/usr/share/factory/etc,upperdir=/sysroot/.overlay-etc/overlay,workdir=/sysroot/.overlay-etc/workdir,nodev,nosuid,ro
 
