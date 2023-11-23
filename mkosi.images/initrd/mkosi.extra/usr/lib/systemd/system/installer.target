@@ -1,0 +1,14 @@
+[Unit]
+Description=Installation Mode
+Documentation=man:systemd.special(7)
+Wants=cryptsetup-pre.target
+After=cryptsetup-pre.target
+Wants=systemd-cryptsetup@lukshdrs.service
+Wants=systemd-cryptsetup@sysimages.service
+Wants=run-spork-sysimages.mount
+After=cryptsetup.target
+After=blockdev@dev-mapper-lukshdrs.target
+After=blockdev@dev-mapper-sysimages.target
+Requires=installer-shell.service
+After=installer-shell.service
+AllowIsolate=yes

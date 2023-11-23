@@ -4,6 +4,8 @@ DefaultDependencies=no
 Wants=modprobe@dm_crypt.service
 After=modprobe@dm_crypt.service
 After=systemd-udevd-kernel.socket
+Requires=dev-security-fido.device
+After=dev-security-fido.device
 Requires=%i.device
 After=%i.device
 Wants=systemd-repart-bootdisk.service
@@ -17,9 +19,10 @@ Conflicts=shutdown.target initrd-switch-root.target
 
 [Service]
 Type=oneshot
+StandardOutput=journal+console
 RemainAfterExit=yes
 ExecCondition=sh -c '! cryptsetup isLuks "%f"'
-ExecStartPre=sh -c '[ "$$(systemd-ask-password -e "Do you want to format %f to initialize the boot stick? (reply with upper case yes")" = "YES" ]'
+ExecStartPre=sh -c 'systemd-ask-password -e "Do you want to format %f to initialize the boot stick? (reply with upper case yes" | grep -Fxq "YES"'
 ExecStart=/usr/libexec/firstboot-init-lukshdrs "%f"
 
 [Install]

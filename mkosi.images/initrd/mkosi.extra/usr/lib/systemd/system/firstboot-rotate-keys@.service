@@ -8,16 +8,20 @@ Requires=%i.device
 After=%i.device
 Wants=systemd-repart-bootdisk.service
 After=systemd-repart-bootdisk.service
+Wants=firstboot-rotate-keys@%i.service
+After=firstboot-rotate-keys@%i.service
 Wants=cryptsetup-pre.target
-Before=cryptsetup-pre.target
+After=cryptsetup-pre.target
 Before=cryptsetup.target
 Before=shutdown.target initrd-switch-root.target
 Conflicts=shutdown.target initrd-switch-root.target
 
 [Service]
 Type=oneshot
+StandardOutput=journal+console
 RemainAfterExit=yes
-ExecStart=/usr/libexec/firstboot-rotate-keys %f
+TimeoutSec=0
+ExecStart=/usr/libexec/firstboot-rotate-keys "%f"
 
 [Install]
 WantedBy=initrd-root-device.target

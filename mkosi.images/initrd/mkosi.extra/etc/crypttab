@@ -1,2 +1,0 @@
-lukshdrs /dev/disk/by-partlabel/lukshdrs - luks,fido2-device=auto,noauto,nofail
-sysimages /dev/disk/by-partlabel/sysimages - luks,fido2-device=auto,noauto,nofail,readonly

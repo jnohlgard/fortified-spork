@@ -1,0 +1,10 @@
+ACTION=="remove", GOTO="lukshdrs_scan_end"
+SUBSYSTEM!="block", GOTO="lukshdrs_scan_end"
+TEST!="/etc/initrd-release", GOTO="lukshdrs_scan_end"
+
+#ENV{ID_FS_USAGE}=="crypto", ENV{ID_FS_LABEL}=="lukshdrs", ENV{SYSTEMD_WANTS}+="lukshdrs-scan.service", TAG+="systemd"
+
+# Create unit instances for partitions without a recognized file system
+ENV{ID_FS_USAGE}=="", ENV{ID_PART_ENTRY_UUID}=="?*", PROGRAM="/usr/bin/sh -c 'echo $env{ID_PART_ENTRY_UUID} | tr - _'", ENV{SYSTEMD_WANTS}+="lukshdrs-cryptsetup@%c.path", TAG+="systemd", SYMLINK+="disk/crypt-data/%c"
+
+LABEL="lukshdrs_scan_end"

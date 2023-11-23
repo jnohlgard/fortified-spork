@@ -6,22 +6,23 @@ Wants=modprobe@loop.service modprobe@dm_mod.service
 After=modprobe@loop.service modprobe@dm_mod.service
 Requires=dev-disk-by\x2dpartlabel-lukshdrs.device
 After=dev-disk-by\x2dpartlabel-lukshdrs.device
-Wants=cryptsetup-pre.target
 Before=cryptsetup-pre.target
+Before=initrd-root-device.target
 Before=initrd-usr-fs.target initrd-root-fs.target
 Before=shutdown.target initrd-switch-root.target
 Conflicts=shutdown.target initrd-switch-root.target
 ConditionVirtualization=!container
-ConditionFirmware=uefi
-ConditionDirectoryNotEmpty=|/usr/lib/repart.d
-ConditionDirectoryNotEmpty=|/usr/local/lib/repart.d
-ConditionDirectoryNotEmpty=|/etc/repart.d
-ConditionDirectoryNotEmpty=|/run/repart.d
+ConditionDirectoryNotEmpty=/usr/lib/repart-bootdisk.d
 
 [Service]
 Type=oneshot
+StandardOutput=journal+console
 RemainAfterExit=yes
-ExecStart=/usr/bin/systemd-repart --root=/ --dry-run=no /dev/disk/by-partlabel/lukshdrs
+ExecStart=/usr/bin/systemd-repart --definitions=/usr/lib/repart-bootdisk.d --empty=refuse --dry-run=no /dev/disk/by-partlabel/lukshdrs
+# Wait for udev to settle partition updates to avoid a race where the device
+# node symlink for a partition label disappears while starting a systemd unit
+# depending on it.
+ExecStart=udevadm trigger -v -w -p DEVTYPE=partition
 
 # The tool returns 77 if there's no existing GPT partition table
 SuccessExitStatus=77

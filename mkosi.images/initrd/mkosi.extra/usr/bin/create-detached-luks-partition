@@ -3,7 +3,7 @@ set -eu
 
 die() {
   if [ $# -gt 0 ]; then
-    >&2 printf "$0"
+    >&2 printf "$@"
   fi
   exit 1
 }
@@ -74,9 +74,9 @@ fi
 
 trap 'die "Something went wrong\n"' QUIT ABRT INT TERM
 
-part_uuid="$(part_uuid_from_blkdev "${blkdev}")"
-header_file="/run/lukshdrs/${part_uuid}.luks"
-luks_mapping="luks-part-${part_uuid}"
+part_uuid="$(part_uuid_from_blkdev "${blkdev}" | tr - _)"
+header_file="/run/spork/lukshdrs/${part_uuid}.luks"
+luks_mapping="luks-${part_uuid}"
 if [ -e "${header_file}" ]; then
   die 'Header file %s already exists, aborting.' "${header_file}"
 fi

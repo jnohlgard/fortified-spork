@@ -1,5 +1,6 @@
 [Unit]
 Description=Mount %P
+Wants=systemd-cryptsetup@lukshdrs.service
 After=blockdev@dev-mapper-lukshdrs.target
 BindsTo=dev-mapper-lukshdrs.device
 After=dev-mapper-lukshdrs.device

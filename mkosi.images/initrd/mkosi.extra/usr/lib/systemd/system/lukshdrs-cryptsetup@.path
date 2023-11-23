@@ -1,13 +1,13 @@
 [Unit]
-Description=Reload systemd to retrigger generators
+Description=LUKS detached header for device %I
 DefaultDependencies=no
+Before=paths.target
 After=cryptsetup-pre.target
-RequiresMountsFor=/run/spork/lukshdrs/
 Before=cryptsetup.target
-Before=initrd-root-device.target
 Before=shutdown.target initrd-switch-root.target
 Conflicts=shutdown.target initrd-switch-root.target
+Before=installer.target
+Conflicts=installer.target
 
-[Service]
-Type=oneshot
-ExecStart=systemctl daemon-reload
+[Path]
+PathExists=%t/spork/lukshdrs/%I.luks

@@ -4,3 +4,6 @@ set -eu
 printf 'Open root logins\n'
 set -x
 usermod -p '' root
+
+printf 'Set systemd default target\n'
+systemctl set-default multi-user.target

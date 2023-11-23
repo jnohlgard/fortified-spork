@@ -1,5 +1,0 @@
-[Unit]
-Description=Automount for %P
-After=blockdev@dev-mapper-lukshdrs.target
-BindsTo=dev-mapper-lukshdrs.device
-After=dev-mapper-lukshrds.device
