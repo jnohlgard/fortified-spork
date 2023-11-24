@@ -1,0 +1,8 @@
+[Unit]
+Description=Wait for hardware security token
+DefaultDependencies=no
+Before=cryptsetup-pre.target
+Before=shutdown.target initrd-switch-root.target
+Conflicts=shutdown.target initrd-switch-root.target
+OnSuccess=default.target
+JobTimeoutSec=infinite

@@ -10,7 +10,5 @@ Conflicts=shutdown.target initrd-switch-root.target
 [Service]
 Type=oneshot
 TimeoutStartSec=infinity
-JobTimeoutSec=infinity
 ExecStart=/usr/libexec/wait-for-yubikey
 StandardOutput=journal+console
-OnSuccess=default.target
