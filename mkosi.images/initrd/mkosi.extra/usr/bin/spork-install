@@ -1,3 +1,106 @@
 #!/usr/bin/sh
 set -eu
 
+die() {
+  if [ $# -gt 0 ]; then
+    >&2 printf "$@"
+  fi
+  exit 1
+}
+
+usage() {
+  printf 'Usage: %s <partition> [extra cryptsetup luksFormat args]\n' "${0##*/}"
+  printf 'Install the system to a partition\n'
+  printf 'Encryption will be bound to a FIDO2 token and the machine TPM2 chip\n'
+}
+
+if [ $# -ne 1 ]; then
+  usage >&2
+  exit 2
+fi
+
+if [ "$1" = '--help' ]; then
+  usage
+  exit 0
+fi
+
+part_uuid_from_blkdev() {
+  if [ $# -ne 1 ] || [ -z "$1" ]; then
+    die 'Usage: part_uuid_from_blkdev <block_dev>\n'
+  fi
+  local partition="$1"
+  if ! test -b "${partition}"; then
+    >&2 printf 'Warning: %s is not a block device\n'
+  fi
+  local part_uuid=''
+  if command -v blkid &>/dev/null; then
+    part_uuid="$(blkid -o value -s PART_ENTRY_UUID -p "${partition}")"
+    if [ -z "${part_uuid}" ]; then
+      # Try again without direct probing
+      part_uuid="$(blkid -o value -s PARTUUID "${partition}")"
+    fi
+  fi
+  if [ -z "${part_uuid}" ]; then
+    if command -v udevadm &>/dev/null; then
+      part_uuid="$(udevadm info -q property --value --property ID_PART_ENTRY_UUID "${partition}")"
+    fi
+  fi
+  if [ -z "${part_uuid}" ]; then
+    if command -v lsblk &>/dev/null; then
+      part_uuid="$(lsblk -o PARTUUID -n "${partition}")"
+    fi
+  fi
+  if [ -z "${part_uuid}" ]; then
+    # Fall back to using the file name
+    part_uuid="${partition##*/}"
+  fi
+  if [ -z "${part_uuid}" ]; then
+    die 'Failed to figure out the partition UUID for %s\n' "${partition}"
+  fi
+  printf '%s' "${part_uuid}" | tr -cd '[:alnum:]-'
+}
+
+blkdev="$1";shift
+
+trap 'die "Something went wrong\n"' QUIT ABRT INT TERM
+
+systemctl start "run-spork-lukshdrs.mount"
+systemctl start "run-spork-sysimages.mount"
+
+part_uuid="$(part_uuid_from_blkdev "${blkdev}" | tr - _)"
+
+header_file="/run/spork/lukshdrs/${part_uuid}.luks"
+if [ ! -e "${header_file}" ]; then
+  printf 'Setting up disk encryption on %s (crypt-data: %s)\n' "${blkdev}" "${part_uuid}"
+  create-detached-luks-partition "/dev/disk/crypt-data/${part_uuid}"
+fi
+
+printf 'Unlocking encrypted partition\n'
+systemctl start "lukshdrs-cryptsetup@${part_uuid}"
+
+printf 'Create LVM PV\n'
+pv_dev="/dev/mapper/luks-${part_uuid}"
+pvcreate "${pv_dev}"
+
+printf 'Create LVM VG vg-sys\n'
+vgcreate vg-sys "${pv_dev}"
+
+printf 'Create /etc/ LV\n'
+lvcreate -L "${etc_size}" -n etc vg-sys
+printf 'Create / LV\n'
+lvcreate -L "${root_size}" -n root vg-sys
+
+printf '\n\n'
+printf '%s\n' \
+  'Next steps:' \
+  '1. Write down the recovery key above on paper!' \
+  '2. Create file system on encrypted device.' \
+  '3. Make backups of this USB drive.' \
+  '' \
+  '=========================================' \
+  '| WRITE DOWN THE RECOVERY KEY ON PAPER! |' \
+  '=========================================' \
+  ''
+
+printf 'All done!\n'
+trap '' QUIT
