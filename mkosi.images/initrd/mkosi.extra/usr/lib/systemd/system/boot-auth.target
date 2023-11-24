@@ -7,4 +7,4 @@ Before=cryptsetup-pre.target
 Before=shutdown.target initrd-switch-root.target
 Conflicts=shutdown.target initrd-switch-root.target
 OnSuccess=default.target
-JobTimeoutSec=inifinite
+JobTimeoutSec=infinite

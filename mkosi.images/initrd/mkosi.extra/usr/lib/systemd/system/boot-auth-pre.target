@@ -1,5 +1,5 @@
 [Unit]
-Description=Prepare for verifyng boot-time user authentication
+Description=Prepare for boot-time user authentication
 DefaultDependencies=no
 Before=boot-auth.target
 Before=shutdown.target initrd-switch-root.target
