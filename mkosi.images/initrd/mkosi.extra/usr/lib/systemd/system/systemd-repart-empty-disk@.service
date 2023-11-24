@@ -1,0 +1,29 @@
+[Unit]
+Description=Repartition empty disk %f
+Documentation=man:systemd-repart(8)
+DefaultDependencies=no
+Requires=%i.device
+After=%i.device
+Before=cryptsetup-pre.target
+Before=initrd-root-device.target
+Before=initrd-usr-fs.target initrd-root-fs.target
+Before=shutdown.target initrd-switch-root.target
+Conflicts=shutdown.target initrd-switch-root.target
+ConditionVirtualization=!container
+ConditionDirectoryNotEmpty=/usr/lib/repart-empty.d
+
+[Service]
+Type=oneshot
+StandardOutput=journal+console
+RemainAfterExit=yes
+ExecStart=/usr/bin/systemd-repart --definitions=/usr/lib/repart-empty.d --empty=require --dry-run=no "%f"
+# Wait for udev to settle partition updates to avoid a race where the device
+# node symlink for a partition label disappears while starting a systemd unit
+# depending on it.
+ExecStart=udevadm trigger -v -w -p DEVTYPE=partition
+
+# The tool returns 77 if there's no existing GPT partition table
+SuccessExitStatus=77
+
+[Install]
+WantedBy=initrd.target
