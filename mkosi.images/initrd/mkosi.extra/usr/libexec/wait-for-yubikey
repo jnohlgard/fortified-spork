@@ -1,0 +1,26 @@
+#!/usr/bin/sh
+set -eu
+
+if [ $# -ne 1 ]; then
+  >&2 printf 'Usage: %s <device>\n' "${0##*/}"
+  exit 2
+fi
+device="$1";shift
+
+timeout=3
+while udevadm wait --timeout "${timeout}" --settle "${device}"
+do
+cat <<'EOF'
+__     __    _     _ _              
+\ \   / /   | |   (_) |             
+ \ \_/ /   _| |__  _| | _____ _   _ 
+  \   / | | | '_ \| | |/ / _ \ | | |
+   | || |_| | |_) | |   <  __/ |_| |
+   |_| \__,_|_.__/|_|_|\_\___|\__, |
+                               __/ |
+                              |___/ 
+
+Insert your hardware security token to continue booting...
+EOF
+timeout=30
+done

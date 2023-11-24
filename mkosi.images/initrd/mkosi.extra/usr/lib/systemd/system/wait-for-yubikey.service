@@ -1,0 +1,16 @@
+[Unit]
+Description=Wait until hardware security token is present
+DefaultDependencies=no
+Requires=systemd-udevd.service
+After=systemd-udevd.service
+Before=wait-for-yubikey.target
+Conflicts=shutdown.target
+Before=shutdown.target
+
+[Service]
+Type=oneshot
+TimeoutStartSec=infinity
+JobTimeoutSec=infinity
+ExecStart=/usr/libexec/wait-for-yubikey
+StandardOutput=journal+console
+OnSuccess=default.target

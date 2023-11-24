@@ -1,0 +1,12 @@
+[Unit]
+Description=Check for security token
+DefaultDependencies=no
+Requires=systemd-udevd.service
+Before=systemd-udevd.service
+Requires=dev-security-fido.device
+Before=dev-security-fido.device
+Conflicts=shutdown.target
+Before=shutdown.target
+OnFailure=wait-for-yubikey.target
+OnFailureJobMode=flush
+JobTimeoutSec=10
