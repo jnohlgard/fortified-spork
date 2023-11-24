@@ -1,5 +1,5 @@
 /.venv/
-/mkosi.tools/
+/mkosi.tools
 /mkosi.crt
 /mkosi.der
 /mkosi.key
@@ -9,3 +9,4 @@
 /disks/
 # temporary workspaces
 .mkosi-*/
+/mkosi.output
