@@ -28,4 +28,4 @@ ExecStart=udevadm trigger -v -w -p DEVTYPE=partition
 SuccessExitStatus=77
 
 [Install]
-WantedBy=initrd-root-device.target
+WantedBy=initrd.target

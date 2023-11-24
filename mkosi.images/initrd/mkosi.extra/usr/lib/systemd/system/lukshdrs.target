@@ -1,0 +1,9 @@
+[Unit]
+Description=Unlock all drives
+DefaultDependencies=no
+Requires=systemd-udevd.service
+After=systemd-udevd.service
+Requires=dev-security-fido.device
+After=dev-security-fido.device
+Conflicts=shutdown.target
+Before=shutdown.target
