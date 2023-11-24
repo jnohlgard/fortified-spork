@@ -7,6 +7,8 @@ After=boot-auth-pre.target
 Before=boot-auth.target
 Before=shutdown.target initrd-switch-root.target
 Conflicts=shutdown.target initrd-switch-root.target
+ConditionCredential=machine-totp
+ConditionCredential=user-totp
 
 [Service]
 Type=oneshot
