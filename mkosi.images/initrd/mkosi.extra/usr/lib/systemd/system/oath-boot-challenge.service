@@ -1,0 +1,20 @@
+[Unit]
+Description=Verify TOTP authentication
+DefaultDependencies=no
+Wants=systemd-ask-password-console.path
+After=systemd-ask-password-console.path
+After=boot-auth-pre.target
+Before=boot-auth.target
+Before=shutdown.target initrd-switch-root.target
+Conflicts=shutdown.target initrd-switch-root.target
+
+[Service]
+Type=oneshot
+TimeoutStartSec=infinity
+JobTimeoutSec=infinity
+ImportCredential=machine-totp
+ImportCredential=user-totp
+ExecStart=/usr/libexec/oath-boot-challenge "${CREDENTIALS_DIRECTORY}/machine-totp" "${CREDENTIALS_DIRECTORY}/user-totp"
+StandardOutput=tty
+StandardError=journal+console
+Restart=on-failure

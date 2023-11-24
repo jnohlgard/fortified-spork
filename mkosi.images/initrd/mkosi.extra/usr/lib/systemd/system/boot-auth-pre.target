@@ -1,0 +1,8 @@
+[Unit]
+Description=Prepare for verifyng boot-time user authentication
+DefaultDependencies=no
+Before=boot-auth.target
+Before=shutdown.target initrd-switch-root.target
+Conflicts=shutdown.target initrd-switch-root.target
+OnSuccess=boot-auth.target
+OnSuccessJobMode=flush

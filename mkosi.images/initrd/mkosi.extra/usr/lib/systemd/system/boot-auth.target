@@ -1,0 +1,10 @@
+[Unit]
+Description=Verify boot-time user authentication
+DefaultDependencies=no
+Wants=boot-auth-pre.target
+After=boot-auth-pre.target
+Before=cryptsetup-pre.target
+Before=shutdown.target initrd-switch-root.target
+Conflicts=shutdown.target initrd-switch-root.target
+OnSuccess=default.target
+JobTimeoutSec=inifinite

@@ -1,0 +1,70 @@
+#!/usr/bin/sh
+set -eu
+
+if [ $# -ne 2 ]; then
+  >&2 printf 'Usage: %s <display_secret> <verify_secret>\n' "${0##*/}"
+  >&2 printf 'Display current TOTP code and verify user code\n'
+  >&2 printf 'Use @filename to read from file and avoid passing secrets as arguments\n'
+  >&2 printf 'Secrets should be base32 encoded\n'
+  exit 2
+fi
+
+display_secret="$1";shift
+verify_secret="$1";shift
+
+algorithm=sha256
+interval=30
+digits=8
+window=2
+now_offset="now -$((window * interval / 2)) sec"
+sd_ask_pass_id="${0##*/}:user-totp"
+
+cat <<'EOF'
+ _____ ___ _____ ____
+|_   _/ _ \_   _|  _ \
+  | || | | || | | |_) |
+  | || |_| || | |  __/
+  |_| \___/ |_| |_|
+
+Authentication required
+EOF
+
+display_totp() {
+  oathtool --totp="${algorithm}" \
+    --time-step-size="${interval}" \
+    --digits="${digits}" \
+    --base32 \
+    "${display_secret}"
+}
+
+verify_totp() {
+  oathtool --totp="${algorithm}" \
+    --time-step-size="${interval}" \
+    --digits="${digits}" \
+    --now="${now_offset}" \
+    --window="${window}" \
+    --base32 \
+    "${verify_secret}" \
+    - >/dev/null 2>/dev/null
+}
+
+trap 'exit 1' INT TERM EXIT QUIT
+
+while true
+do
+  printf '\n\nCurrent time (UTC): %s\n' "$(date -u)"
+  printf '\nMachine TOTP code: %s\n\n' "$(display_totp)"
+  if systemd-ask-password \
+    --id="${sd_ask_pass_id}" \
+    --icon=dialog-password \
+    --timeout="${interval}" \
+    --echo=yes \
+    | verify_totp; then
+    printf 'Code OK!\n'
+    trap - EXIT
+    exit 0
+  fi
+  >&2 printf 'Wrong user TOTP code.\n'
+  printf 'Try again.\n'
+done
+exit 1

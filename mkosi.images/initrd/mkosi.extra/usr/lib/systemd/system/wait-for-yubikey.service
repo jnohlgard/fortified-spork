@@ -4,8 +4,8 @@ DefaultDependencies=no
 Requires=systemd-udevd.service
 After=systemd-udevd.service
 Before=wait-for-yubikey.target
-Conflicts=shutdown.target
-Before=shutdown.target
+Before=shutdown.target initrd-switch-root.target
+Conflicts=shutdown.target initrd-switch-root.target
 
 [Service]
 Type=oneshot
