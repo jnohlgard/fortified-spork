@@ -1,13 +1,8 @@
 [Unit]
 Description=Rotate volume encryption keys on %f
 DefaultDependencies=no
-Wants=modprobe@dm_crypt.service
-After=modprobe@dm_crypt.service
-After=systemd-udevd-kernel.socket
 Requires=%i.device
 After=%i.device
-Wants=systemd-repart-bootdisk.service
-After=systemd-repart-bootdisk.service
 Wants=firstboot-rotate-keys@%i.service
 After=firstboot-rotate-keys@%i.service
 Wants=cryptsetup-pre.target
@@ -19,9 +14,8 @@ Conflicts=shutdown.target initrd-switch-root.target
 [Service]
 Type=oneshot
 StandardOutput=journal+console
-RemainAfterExit=yes
 TimeoutSec=infinity
 ExecStart=/usr/libexec/firstboot-rotate-keys "%f"
 
 [Install]
-WantedBy=initrd-root-device.target
+WantedBy=initrd.target

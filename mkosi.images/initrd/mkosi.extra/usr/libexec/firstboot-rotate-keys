@@ -3,7 +3,7 @@ set -eu
 
 if [ $# -ne 1 ]; then
   >&2 printf 'Usage: %s <device>\n' "${0##*/}"
-  >&2 printf 'Perform first boot key rotation if necessary\n'
+  >&2 printf 'Rotate volume encryption key if the volume can be unlocked by an empty passphrase\n'
   exit 2
 fi
 
@@ -21,8 +21,7 @@ if ! printf '\n' | cryptsetup --test-passphrase --disable-external-tokens open "
   exit 0
 fi
 
-printf '%s can be unlocked with an empty passphrase, rotating keys before setting up tokens.\n' "${blkdev}"
-
+printf '%s can be unlocked with an empty passphrase.\n' "${blkdev}"
 printf 'Rotating volume key on %s. This will take some time...\n' "${blkdev}"
 time printf '\n' | cryptsetup reencrypt \
   --cipher "${REENCRYPT_CIPHER}" \

@@ -20,14 +20,20 @@ if [ -n "${current_fstype}" ]; then
   >&2 printf 'Error: %s already contains a file system of type %s!\n' "${blkdev}" "${current_fstype}"
   exit 1
 fi
+if [ -n "$(wipefs -n -p "${blkdev}")" ]; then
+  >&2 printf 'Error: Device %s already contains something\n' "${blkdev}"
+  >&2 wipefs -n "${blkdev}"
+  exit 1
+fi
 
 keyfile_tmp="$(mktemp -t lukshdrs-temporary-keyfile-XXXXXXXX.bin)"
-dd if=/dev/urandom bs=128 count=1 of="${keyfile_tmp}"
+dd if=/dev/urandom bs=128 count=1 of="${keyfile_tmp}" status=none
 
 printf 'Creating LUKS header on %s\n' "${blkdev}"
-cryptsetup luksFormat --batch-mode --type luks2 \
+cryptsetup luksFormat \
+  --batch-mode \
+  --type luks2 \
   --key-file "${keyfile_tmp}" \
-  --key-slot=0 \
   --label "${luks_label}" \
   --cipher "${cipher_algo}" \
   --key-size "${cipher_keysize}" \
@@ -38,16 +44,14 @@ printf 'Open newly formatted device %s as dm-crypt mapping %s\n' "${blkdev}" "${
 cryptsetup open --key-file "${keyfile_tmp}" "${blkdev}" "${luks_label}"
 crypt_dev="/dev/mapper/${luks_label}"
 printf 'Format encrypted device %s as XFS\n' "${crypt_dev}"
-mkfs.xfs -m rmapbt=1 -L "${luks_label}" "${crypt_dev}"
+udevadm lock -d "${crypt_dev}" mkfs.xfs -m rmapbt=1 -L "${luks_label}" "${crypt_dev}"
 printf 'Disable dm-crypt mapping %s\n' "${luks_label}"
 cryptsetup close "${luks_label}"
 
 printf 'Enrolling FIDO2 key for encryption unlocking, you may need to enter your FIDO pin next\n'
 systemd-cryptenroll --unlock-key-file="${keyfile_tmp}" \
   --fido2-device=auto \
-  --fido2-with-client-pin=yes \
-  --fido2-with-user-presence=yes \
-  --wipe-slot=0 \
+  --wipe-slot=password \
   "${blkdev}"
 
 # Shred the temporary key since we don't need it anymore
