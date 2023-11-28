@@ -17,7 +17,7 @@ After=dev-disk-crypt\x2ddata-%i.device
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-TimeoutSec=0
+TimeoutSec=infinity
 KeyringMode=shared
 OOMScoreAdjust=500
 ExecStart=/usr/lib/systemd/systemd-cryptsetup attach 'luks-%I' '/dev/disk/crypt-data/%I' '-' 'luks,tpm2-device=auto,fido2-device=auto,header=%t/spork/lukshdrs/%I.luks'

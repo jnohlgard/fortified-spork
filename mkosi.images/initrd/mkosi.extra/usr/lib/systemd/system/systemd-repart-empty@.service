@@ -4,6 +4,7 @@ Documentation=man:systemd-repart(8)
 DefaultDependencies=no
 Requires=%i.device
 After=%i.device
+After=boot-auth.target
 Before=cryptsetup-pre.target
 Before=initrd-root-device.target
 Before=initrd-usr-fs.target initrd-root-fs.target
@@ -16,14 +17,12 @@ ConditionDirectoryNotEmpty=/usr/lib/repart-empty.d
 Type=oneshot
 StandardOutput=journal+console
 RemainAfterExit=yes
+ExecCondition=/usr/bin/udevadm lock -d "%f" /usr/libexec/is-disk-blank "%f"
 ExecStart=/usr/bin/systemd-repart --definitions=/usr/lib/repart-empty.d --empty=require --dry-run=no "%f"
 # Wait for udev to settle partition updates to avoid a race where the device
 # node symlink for a partition label disappears while starting a systemd unit
 # depending on it.
-ExecStart=udevadm trigger -v -w -p DEVTYPE=partition
-
-# The tool returns 77 if there's no existing GPT partition table
-SuccessExitStatus=77
+ExecStart=udevadm wait --settle -t 3 "%f"
 
 [Install]
 WantedBy=initrd.target

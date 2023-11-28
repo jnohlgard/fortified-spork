@@ -1,0 +1,9 @@
+[Unit]
+Description=Reset failed units
+DefaultDependencies=no
+Before=shutdown.target initrd-switch-root.target
+Conflicts=shutdown.target initrd-switch-root.target
+
+[Service]
+Type=oneshot
+ExecStart=systemctl reset-failed

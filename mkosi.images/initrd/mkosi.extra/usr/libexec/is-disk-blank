@@ -1,0 +1,62 @@
+#!/usr/bin/sh
+set -eu
+
+die() {
+  if [ $# -gt 0 ]; then
+    >&2 printf "$@"
+  fi
+  exit 1
+}
+
+usage() {
+  printf 'Usage: %s <device>\n' "${0##*/}"
+  printf 'Verify that a disk is most likely unused and empty\n'
+}
+
+if [ $# -ne 1 ]; then
+  usage >&2
+  exit 2
+fi
+
+if [ "$1" = '--help' ]; then
+  usage
+  exit 0
+fi
+
+blkdev="$1";shift
+
+if ! dd if="${blkdev}" count=1 of=/dev/null status=none; then
+  die 'No access: %s\n' "${blkdev}"
+fi
+
+if cryptsetup isLuks "${blkdev}"; then
+  die '%s already contains a LUKS header\n' "${blkdev}"
+fi
+
+sysfs_device="/sys/$(udevadm info -q path "${blkdev}")"
+if [ -e "${sysfs_device}/size" ]; then
+  blkdev_size="$(cat "${sysfs_device}/size")"
+else
+  die 'Only block devices supported\n'
+fi
+# size is given in 512 byte sectors, regardless of the block device logical sector size
+# sectors * 512 / 1024 / 1024 <=> sectors / 2048
+blkdev_size_mib=$((blkdev_size / 2048))
+check_block=0
+check_blocksize=16
+check_step=137
+check_end=$((blkdev_size_mib / check_blocksize))
+# Never read more than this many check_blocksize segments before deciding that
+# the device is blank
+check_max_count=100
+if [ $((check_end)) -gt $((check_max_count * check_step)) ]; then
+  check_end=$((check_max_count * check_step))
+fi
+while [ "${check_block}" -lt "${check_end}" ]; do
+  if ! dd if="${blkdev}" bs="${check_blocksize}M" count=1 skip="${check_block}" status=none | cmp -n "${check_blocksize}M" -s /dev/zero -; then
+    die 'Device is not blank, found non-zero data in segment %s MiB (segment size %s MiB)\n' \
+      "$((check_block * check_blocksize))" \
+      "${check_blocksize}"
+  fi
+  check_block=$((check_block + check_step))
+done

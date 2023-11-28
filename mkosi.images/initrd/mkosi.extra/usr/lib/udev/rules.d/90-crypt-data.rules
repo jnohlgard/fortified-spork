@@ -1,0 +1,10 @@
+ACTION=="remove", GOTO="crypt_data_end"
+SUBSYSTEM!="block", GOTO="crypt_data_end"
+TEST!="/etc/initrd-release", GOTO="crypt_data_end"
+# swap partitions use type 0657fd6d-a4ab-43c4-84e5-0933c84b4f4f
+ENV{ID_PART_ENTRY_TYPE}=="0657fd6d-a4ab-43c4-84e5-0933c84b4f4f", GOTO="crypt_data_end"
+
+# Any partition without a recognized file system gets a systemd unit
+ENV{ID_FS_USAGE}=="", ENV{ID_PART_ENTRY_UUID}=="?*", TAG+="systemd", ENV{SYSTEMD_WANTS}+="crypt-data@.service"
+
+LABEL="crypt_data_end"

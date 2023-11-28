@@ -1,0 +1,13 @@
+ACTION=="remove", GOTO="repart_empty_disks_end"
+SUBSYSTEM!="block", GOTO="repart_empty_disks_end"
+TEST!="/etc/initrd-release", GOTO="repart_empty_disks_end"
+ENV{ID_TYPE}!="", ENV{ID_TYPE}!="disk", GOTO="repart_empty_disks_end"
+ENV{ID_BUS}=="usb", GOTO="repart_empty_disks_end"
+# Only apply to physical SATA, NVME, or Xen/QEMU virtio disks.
+# Specifically we want to avoid accidentally partitioning loopback devices,
+# eMMC, LVM or network storage devices.
+KERNEL!="nvme*|sd*|vd*|xvd*", GOTO="repart_empty_disks_end"
+ATTR{removable}!="0", GOTO="repart_empty_disks_end"
+ENV{ID_PART_TABLE_TYPE}=="", ENV{ID_PART_ENTRY_TYPE}=="", ENV{ID_FS_TYPE}=="", ENV{ID_PART_ENTRY_UUID}=="", TAG+="systemd", ENV{SYSTEMD_WANTS}+="systemd-repart-empty@%k.service"
+
+LABEL="repart_empty_disks_end"

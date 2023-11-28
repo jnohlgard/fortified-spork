@@ -20,7 +20,7 @@ Conflicts=shutdown.target initrd-switch-root.target
 Type=oneshot
 StandardOutput=journal+console
 RemainAfterExit=yes
-TimeoutSec=0
+TimeoutSec=infinity
 ExecStart=/usr/libexec/firstboot-rotate-keys "%f"
 
 [Install]

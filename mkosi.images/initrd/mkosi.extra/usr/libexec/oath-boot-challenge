@@ -2,9 +2,8 @@
 set -eu
 
 if [ $# -ne 2 ]; then
-  >&2 printf 'Usage: %s <display_secret> <verify_secret>\n' "${0##*/}"
+  >&2 printf 'Usage: %s <display_secret_file> <verify_secret_file>\n' "${0##*/}"
   >&2 printf 'Display current TOTP code and verify user code\n'
-  >&2 printf 'Use @filename to read from file and avoid passing secrets as arguments\n'
   >&2 printf 'Secrets should be base32 encoded\n'
   exit 2
 fi
@@ -34,7 +33,7 @@ display_totp() {
     --time-step-size="${interval}" \
     --digits="${digits}" \
     --base32 \
-    "${display_secret}"
+    "@${display_secret}"
 }
 
 verify_totp() {
@@ -44,7 +43,7 @@ verify_totp() {
     --now="${now_offset}" \
     --window="${window}" \
     --base32 \
-    "${verify_secret}" \
+    "@${verify_secret}" \
     - >/dev/null 2>/dev/null
 }
 
@@ -59,6 +58,7 @@ do
     --icon=dialog-password \
     --timeout="${interval}" \
     --echo=yes \
+    "Enter user TOTP code to confirm:" \
     | verify_totp; then
     printf 'Code OK!\n'
     trap - EXIT

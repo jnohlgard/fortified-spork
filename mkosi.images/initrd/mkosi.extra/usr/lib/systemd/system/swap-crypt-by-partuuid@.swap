@@ -1,0 +1,7 @@
+[Unit]
+Description=Activate encrypted swap partition %f
+After=blockdev@%N.target
+
+[Swap]
+Priority=100
+Options=discard

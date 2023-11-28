@@ -6,6 +6,7 @@ Wants=modprobe@loop.service modprobe@dm_mod.service
 After=modprobe@loop.service modprobe@dm_mod.service
 Requires=dev-disk-by\x2dpartlabel-lukshdrs.device
 After=dev-disk-by\x2dpartlabel-lukshdrs.device
+After=boot-auth.target
 Before=cryptsetup-pre.target
 Before=initrd-root-device.target
 Before=initrd-usr-fs.target initrd-root-fs.target

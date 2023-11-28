@@ -7,15 +7,19 @@ After=boot-auth-pre.target
 Before=boot-auth.target
 Before=shutdown.target initrd-switch-root.target
 Conflicts=shutdown.target initrd-switch-root.target
-AssertCredential=machine-totp
-AssertCredential=user-totp
+#AssertCredential=machine-totp
+#AssertCredential=user-totp
+JobTimeoutSec=infinite
+JobRunningTimeoutSec=infinite
 
 [Service]
 Type=oneshot
 TimeoutStartSec=infinity
-JobTimeoutSec=infinity
 ImportCredential=machine-totp
 ImportCredential=user-totp
+# Defaults used for testing only:
+SetCredential=machine-totp:BPKF27AFCBKJOXK7YTNFKL2EY77YD74D
+SetCredential=user-totp:5LP5C2747SOIJPJXJ7OW63G5R2EY3IZY
 ExecStart=/usr/libexec/oath-boot-challenge "${CREDENTIALS_DIRECTORY}/machine-totp" "${CREDENTIALS_DIRECTORY}/user-totp"
 StandardOutput=tty
 StandardError=journal+console
