@@ -1,11 +1,12 @@
 [Unit]
-Description=Enroll hardware tokens for encryption
+Description=Enroll hardware tokens for encryption if currently using empty passphrase on %f
 DefaultDependencies=no
 Requires=dev-security-fido.device
 After=dev-security-fido.device
 Requires=%i.device
 After=%i.device
-After=firstboot-rotate-keys@%i.service
+Wants=cryptsetup-rotate-keys@%i.service
+Before=cryptsetup-rotate-keys@%i.service
 Wants=cryptsetup-pre.target
 After=cryptsetup-pre.target
 Before=cryptsetup.target

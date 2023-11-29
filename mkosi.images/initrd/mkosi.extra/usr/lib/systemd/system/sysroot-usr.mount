@@ -7,4 +7,4 @@ After=blockdev@dev-vg\x2dsys-usr.target
 
 [Mount]
 What=/dev/vg-sys/usr
-Options=nodev
+Options=ro,nodev

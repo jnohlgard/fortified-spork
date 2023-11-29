@@ -1,6 +1,5 @@
 [Unit]
-Description=Mount %P
-Wants=blockdev@dev-mapper-sysimages.target
+Description=Mount %f
 After=blockdev@dev-mapper-sysimages.target
 BindsTo=dev-mapper-sysimages.device
 After=dev-mapper-sysimages.device

@@ -1,8 +1,8 @@
 [Unit]
 Description=Wait until hardware security token is present
 DefaultDependencies=no
-Requires=systemd-udevd.service
-After=systemd-udevd.service
+Wants=systemd-udevd-kernel.socket
+After=systemd-udevd-kernel.socket
 Before=wait-for-yubikey.target
 Before=shutdown.target initrd-switch-root.target
 Conflicts=shutdown.target initrd-switch-root.target

@@ -5,14 +5,15 @@ DefaultDependencies=no
 IgnoreOnIsolate=true
 Wants=cryptsetup-pre.target systemd-udevd-kernel.socket
 After=cryptsetup-pre.target systemd-udevd-kernel.socket
+After=systemd-random-seed.service
 Wants=blockdev@dev-mapper-swap\x2d%i.target
 Before=blockdev@dev-mapper-swap\x2d%i.target
 Before=cryptsetup.target
+Before=swap.target
 Conflicts=umount.target
 Before=umount.target
-After=systemd-random-seed.service
-BindsTo=dev-disk-by\x2d%j-%i.device
-After=dev-disk-by\x2d%j-%i.device
+BindsTo=dev-disk-by\x2dpartuuid-%i.device
+After=dev-disk-by\x2dpartuuid-%i.device
 
 [Service]
 Type=oneshot
@@ -20,7 +21,7 @@ RemainAfterExit=yes
 TimeoutSec=infinity
 OOMScoreAdjust=500
 Environment="CRYPTSETUP_OPTIONS=swap,discard"
-ExecStartPre=sh -c '[ "$$(lsblk -rnd -o PARTTYPE "/dev/disk/by-%J/%I")" = "0657fd6d-a4ab-43c4-84e5-0933c84b4f4f" ]'
-ExecStart=/usr/lib/systemd/systemd-cryptsetup attach 'swap-%I' '/dev/disk/by-%J/%I' '/dev/urandom' "${CRYPTSETUP_OPTIONS}"
+ExecStartPre=sh -c '[ "$$(lsblk -rnd -o PARTTYPE "/dev/disk/by-partuuid/%I")" = "0657fd6d-a4ab-43c4-84e5-0933c84b4f4f" ]'
+ExecStart=/usr/lib/systemd/systemd-cryptsetup attach 'swap-%I' '/dev/disk/by-partuuid/%I' '/dev/urandom' "${CRYPTSETUP_OPTIONS}"
 ExecStart=/usr/lib/systemd/systemd-makefs swap '/dev/mapper/swap-%I'
 ExecStop=/usr/lib/systemd/systemd-cryptsetup detach 'swap-%I'

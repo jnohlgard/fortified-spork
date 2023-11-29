@@ -3,7 +3,6 @@ Description=Wait for hardware security token
 DefaultDependencies=no
 Wants=systemd-reset-failed.service
 Before=systemd-reset-failed.service
-Before=boot-auth-pre.target
 Before=cryptsetup-pre.target
 Before=shutdown.target initrd-switch-root.target
 Conflicts=shutdown.target initrd-switch-root.target

@@ -1,17 +1,17 @@
 [Unit]
-Description=Cryptography Setup for %I
+Description=Disk encryption for %I
 Documentation=man:crypttab(5) man:systemd-cryptsetup-generator(8) man:systemd-cryptsetup@.service(8)
-SourcePath=/etc/crypttab
 
 DefaultDependencies=no
 After=cryptsetup-pre.target systemd-udevd-kernel.socket
-Before=blockdev@dev-mapper-%i.target
 Wants=blockdev@dev-mapper-%i.target
+Before=blockdev@dev-mapper-%i.target
+Before=cryptsetup.target
 IgnoreOnIsolate=true
 Conflicts=umount.target
 Before=umount.target
-BindsTo=dev-disk-by\x2dpartlabel-lukshdrs.device
-After=dev-disk-by\x2dpartlabel-lukshdrs.device
+BindsTo=dev-disk-by\x2dpartlabel-%i.device
+After=dev-disk-by\x2dpartlabel-%i.device
 
 [Service]
 Type=oneshot
@@ -19,5 +19,5 @@ RemainAfterExit=yes
 TimeoutSec=infinity
 KeyringMode=shared
 OOMScoreAdjust=500
-ExecStart=/usr/lib/systemd/systemd-cryptsetup attach 'lukshdrs' '/dev/disk/by-partlabel/lukshdrs' '-' 'luks,fido2-device=auto,noauto,nofail'
-ExecStop=/usr/lib/systemd/systemd-cryptsetup detach 'lukshdrs'
+ExecStart=/usr/lib/systemd/systemd-cryptsetup attach '%I' '/dev/disk/by-partlabel/%I' '-' 'luks,fido2-device=auto'
+ExecStop=/usr/lib/systemd/systemd-cryptsetup detach '%I'

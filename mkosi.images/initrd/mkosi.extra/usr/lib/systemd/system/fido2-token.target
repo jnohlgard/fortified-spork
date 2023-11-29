@@ -1,8 +1,6 @@
 [Unit]
 Description=Check for security token
 DefaultDependencies=no
-Requires=systemd-udevd.service
-After=systemd-udevd.service
 Requires=dev-security-fido.device
 After=dev-security-fido.device
 Before=boot-auth-pre.target

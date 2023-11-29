@@ -3,8 +3,6 @@ Description=Rotate volume encryption keys on %f
 DefaultDependencies=no
 Requires=%i.device
 After=%i.device
-Wants=firstboot-rotate-keys@%i.service
-After=firstboot-rotate-keys@%i.service
 Wants=cryptsetup-pre.target
 After=cryptsetup-pre.target
 Before=cryptsetup.target
@@ -14,8 +12,12 @@ Conflicts=shutdown.target initrd-switch-root.target
 [Service]
 Type=oneshot
 StandardOutput=journal+console
+StandardError=inherit
 TimeoutSec=infinity
-ExecStart=/usr/libexec/firstboot-rotate-keys "%f"
+Environment="EXTRA_REENCRYPT_ARGS="
+ExecStartPre=cryptsetup isLuks '%f'
+ExecStartPre=echo 'Rotating volume encryption key on %f. This may take some time...'
+ExecStart=sh -c 'echo | cryptsetup reencrypt --progress-frequency=2 ${EXTRA_REENCRYPT_ARGS} "%f"'
 
 [Install]
 WantedBy=initrd.target
