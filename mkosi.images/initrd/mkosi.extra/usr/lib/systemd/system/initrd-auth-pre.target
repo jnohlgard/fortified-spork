@@ -2,8 +2,8 @@
 Description=Prepare for boot-time user authentication
 DefaultDependencies=no
 After=systemd-pcrphase-initrd.service
-Before=boot-auth.target
+Before=initrd-auth.target
 Before=shutdown.target initrd-switch-root.target
 Conflicts=shutdown.target initrd-switch-root.target
-OnSuccess=boot-auth.target
+OnSuccess=initrd-auth.target
 OnSuccessJobMode=flush

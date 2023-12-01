@@ -1,0 +1,26 @@
+[Unit]
+Description=Mutual TOTP authentication
+DefaultDependencies=no
+Wants=systemd-ask-password-console.path
+After=systemd-ask-password-console.path
+After=systemd-ask-password-plymouth.path
+After=initrd-auth-pre.target
+Wants=initrd-totp-generate@machine.service
+After=initrd-totp-generate@machine.service
+Wants=initrd-totp-generate@user.service
+After=initrd-totp-generate@user.service
+Before=initrd-auth.target
+Before=shutdown.target initrd-switch-root.target
+Conflicts=shutdown.target initrd-switch-root.target
+JobTimeoutSec=infinite
+JobRunningTimeoutSec=infinite
+
+[Service]
+Type=oneshot
+TimeoutStartSec=infinity
+ImportCredential=initrd-totp-machine
+ImportCredential=initrd-totp-user
+ExecStart=/usr/libexec/totp-mutual "${CREDENTIALS_DIRECTORY}/initrd-totp-machine" "${CREDENTIALS_DIRECTORY}/initrd-totp-user"
+StandardOutput=tty
+StandardError=journal+console
+Restart=on-failure

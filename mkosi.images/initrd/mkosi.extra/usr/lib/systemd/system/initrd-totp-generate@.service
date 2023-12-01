@@ -1,0 +1,21 @@
+[Unit]
+Description=Generate key for TOTP authentication
+DefaultDependencies=no
+After=initrd-auth-pre.target
+Before=initrd-totp.service
+Before=initrd-auth.target
+Before=shutdown.target initrd-switch-root.target
+Conflicts=shutdown.target initrd-switch-root.target
+ConditionCredential=!initrd-totp-%I
+ConditionPathExists=!%t/credstore.encrypted/initrd-totp-%I
+ConditionSecurity=tpm2
+RequiresMountsFor=%t/credstore.encrypted
+RequiresMountsFor=/efi/loader/credentials
+
+[Service]
+StandardOutput=tty
+StandardError=inherit
+Type=oneshot
+ExecStartPre=mkdir -m 0700 -p -Z -v '%t/credstore.encrypted'
+ExecStartPre=mkdir -p -v '/efi/loader/credentials'
+ExecStart=sh -eu -c 'umask 0077; printf "New machine TOTP key:\n\n" >&2 ; dd if=/dev/urandom bs=20 count=1 status=none | base32 -w0 | tee /dev/stderr | systemd-creds encrypt --with-key=tpm2 --name="initrd-totp-%I" --tpm2-pcrs=0+4+7+14 - - | tee "%t/credstore.encrypted/initrd-totp-%I" > "/efi/loader/credentials/initrd-totp-%I.cred"; printf "\n\n"'

@@ -1,8 +1,8 @@
 [Unit]
 Description=Verify boot-time user authentication
 DefaultDependencies=no
-Wants=boot-auth-pre.target
-After=boot-auth-pre.target
+Wants=initrd-auth-pre.target
+After=initrd-auth-pre.target
 Wants=systemd-reset-failed.service
 Before=systemd-reset-failed.service
 Before=cryptsetup-pre.target
