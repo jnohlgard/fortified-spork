@@ -1,11 +1,12 @@
 [Unit]
-Description=Unlock all drives
+Description=Locate detached LUKS headers
 DefaultDependencies=no
 Wants=systemd-udevd.service
 After=systemd-udevd.service
 Wants=dev-security-fido.device
 After=dev-security-fido.device
-After=cryptsetup.target
+After=cryptsetup-pre.target
+Before=cryptsetup.target
 Before=initrd-fs.target
 Before=initrd-root-device.target
 Conflicts=shutdown.target

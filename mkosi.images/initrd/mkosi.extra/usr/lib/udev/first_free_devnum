@@ -1,0 +1,11 @@
+#!/usr/bin/sh
+set -eu
+
+[ $# -eq 1 ]
+devnode="/dev/$1"
+
+n=0
+while [ -e "${devnode}$n" ]; do
+  n="$((n + 1))"
+done
+printf '%s\n' "$n"

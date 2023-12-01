@@ -2,6 +2,7 @@
 Description=Generate key for TOTP authentication
 DefaultDependencies=no
 After=initrd-auth-pre.target
+After=systemd-random-seed.service
 Before=initrd-totp.service
 Before=initrd-auth.target
 Before=shutdown.target initrd-switch-root.target

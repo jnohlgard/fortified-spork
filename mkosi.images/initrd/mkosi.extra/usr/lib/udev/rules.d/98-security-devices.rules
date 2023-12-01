@@ -5,8 +5,8 @@ ENV{ID_FIDO_TOKEN}=="1", TAG+="systemd", SYMLINK+="security/fido"
 ENV{ID_SMARTCARD_READER}=="1", TAG+="systemd", SYMLINK+="security/smartcard"
 
 # Try to find an available numbered symlink as well
-ENV{ID_FIDO_TOKEN}=="1", IMPORT{program}="/usr/bin/sh -c 'for n in $$(seq 0 9); do [ ! -e /dev/security/fido$$n ] && echo ID_FIDO_DEVNUM=$$n && break; done'"
-ENV{ID_SMARTCARD_READER}=="1", IMPORT{program}="/usr/bin/sh -c 'for n in $$(seq 0 9); do [ ! -e /dev/security/smartcard$$n ] && echo ID_SMARTCARD_DEVNUM=$$n && break; done'"
+ENV{ID_FIDO_TOKEN}=="1", PROGRAM="first_free_devnum security/fido", ENV{ID_FIDO_DEVNUM}="%c"
+ENV{ID_SMARTCARD_READER}=="1", PROGRAM="first_free_devnum security/smartcard", ENV{ID_SMARTCARD_DEVNUM}="%c"
 ENV{ID_FIDO_DEVNUM}=="?*", SYMLINK+="security/fido$env{ID_FIDO_DEVNUM}"
 ENV{ID_SMARTCARD_DEVNUM}=="?*", SYMLINK+="security/smartcard$env{ID_SMARTCARD_DEVNUM}"
 
