@@ -1,0 +1,18 @@
+#!/usr/bin/sh
+set -eu
+
+if [ $# -ne 2 ]; then
+  >&2 printf 'Usage: %s <parttype_guid> <sysfs-device>\n' "${0##*/}"
+  exit 2
+fi
+
+parttype="$1";shift
+device="${1%%/}";shift
+
+for part in "${device}/${device##*/}"?*; do
+  this_parttype="$(udevadm info -p "${part}" -q property --value --property="ID_PART_ENTRY_TYPE")" || continue
+  if [ "${parttype}" = "${this_parttype}" ]; then
+    exit 0
+  fi
+done
+exit 1

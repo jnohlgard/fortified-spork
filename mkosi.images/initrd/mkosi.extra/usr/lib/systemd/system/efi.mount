@@ -1,0 +1,8 @@
+[Unit]
+Description=Mount %f
+BindsTo=dev-disk-by\x2did-spork\x2desp.device
+After=dev-disk-by\x2did-spork\x2desp.device
+
+[Mount]
+What=/dev/disk/by-id/spork-esp
+Type=vfat

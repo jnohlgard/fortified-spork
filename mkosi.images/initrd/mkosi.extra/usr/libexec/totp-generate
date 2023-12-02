@@ -1,0 +1,45 @@
+#!/usr/bin/sh
+set -eu
+
+if [ $# -ne 2 ]; then
+  >&2 printf 'Usage: %s <keyid> <outdir>\n' "${0##*/}"
+  exit 2
+fi
+
+keyid="$1"; shift
+outdir="$1"; shift
+keysize=20
+loadercredsdir='/efi/loader/credentials'
+
+umask 077
+
+generate_key() {
+  [ $# -eq 1 ] || return 2
+  keylen="$1"
+  dd if=/dev/urandom bs="${keylen}" count=1 status=none | base32 -w0
+}
+
+new_key="$(generate_key "${keysize}")"
+
+if [ -e "${outdir}/${keyid}" ]; then 
+  >&2 printf 'Key already exists: %s\n' "${outdir}/${keyid}"
+  exit 1
+fi
+
+systemd-creds encrypt \
+  --with-key=tpm2 \
+  --name="${keyid}" \
+  --tpm2-pcrs=0+4+7+14 \
+  - "${outdir}/${keyid}" <<EOF
+${new_key}
+EOF
+
+cp -v "${outdir}/${keyid}" "${loadercredsdir}/${keyid}.cred"
+
+cat <<EOF
+New ${keyid} TOTP key:
+
+${new_key}
+
+
+EOF

@@ -1,0 +1,8 @@
+#!/usr/bin/sh
+set -eu
+[ $# -gt 0 ]
+varname="$1";shift
+
+printf '%s=' "${varname}"
+# Double all backslashes to get \x2d working properly in SYSTEMD_WANTS
+systemd-escape "$@" | sed -e 's/\\/\\\\/g'
