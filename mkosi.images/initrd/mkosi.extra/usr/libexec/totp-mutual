@@ -52,7 +52,9 @@ trap 'exit 1' INT TERM EXIT QUIT
 while true
 do
   printf '\n\nCurrent time (UTC): %s\n' "$(date -u)"
-  printf '\nMachine TOTP code: %s\n\n' "$(display_totp)"
+  printf '\nMachine TOTP code:\n'
+  display_totp
+  printf '\n\n'
   if systemd-ask-password \
     --id="${sd_ask_pass_id}" \
     --icon=dialog-password \
