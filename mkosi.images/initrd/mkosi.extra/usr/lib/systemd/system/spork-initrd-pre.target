@@ -1,0 +1,11 @@
+[Unit]
+Description=Begin initialize encrypted storage
+DefaultDependencies=no
+After=systemd-pcrphase-initrd.service
+After=initrd-auth.target
+Before=spork-init-disks.target
+Before=cryptsetup.target
+Before=shutdown.target initrd-switch-root.target
+Conflicts=shutdown.target initrd-switch-root.target
+OnSuccess=spork-init-disks.target
+OnSuccessJobMode=flush

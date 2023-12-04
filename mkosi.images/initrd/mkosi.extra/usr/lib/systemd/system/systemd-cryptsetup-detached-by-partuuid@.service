@@ -5,6 +5,8 @@ Documentation=man:crypttab(5) man:systemd-cryptsetup-generator(8) man:systemd-cr
 DefaultDependencies=no
 Wants=cryptsetup-pre.target
 After=cryptsetup-pre.target systemd-udevd-kernel.socket
+Wants=luks-format-detached-by-%j@%i.service
+After=luks-format-detached-by-%j@%i.service
 Wants=blockdev@dev-mapper-luks\x2d%i.target
 Before=blockdev@dev-mapper-luks\x2d%i.target
 Before=cryptsetup.target
@@ -23,5 +25,6 @@ TimeoutSec=infinity
 KeyringMode=shared
 OOMScoreAdjust=500
 Environment="CRYPTSETUP_OPTIONS=luks,fido2-device=auto,tpm2-device=auto,header=%t/spork/luks/%I.luks"
+ExecCondition=sh -c '! cryptsetup isLuks "/dev/disk/by-%J/%I"'
 ExecStart=/usr/lib/systemd/systemd-cryptsetup attach 'luks-%I' '/dev/disk/by-%J/%I' '-' "${CRYPTSETUP_OPTIONS}"
 ExecStop=/usr/lib/systemd/systemd-cryptsetup detach 'luks-%I'

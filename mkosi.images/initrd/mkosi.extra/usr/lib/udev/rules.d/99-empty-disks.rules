@@ -9,6 +9,6 @@ ENV{DEVTYPE}!="disk", GOTO="repart_empty_disks_end"
 # eMMC, LVM, network storage devices etc.
 KERNEL!="nvme*|sd*|vd*|xvd*", GOTO="repart_empty_disks_end"
 ATTR{removable}!="0", GOTO="repart_empty_disks_end"
-ENV{ID_PART_TABLE_TYPE}=="", ENV{ID_PART_ENTRY_TYPE}=="", ENV{ID_FS_TYPE}=="", ENV{ID_PART_ENTRY_UUID}=="", TAG+="systemd", ENV{SYSTEMD_WANTS}+="systemd-repart-empty@%k.service"
+ENV{DEVNAME_SYSTEMD}=="?*", ENV{ID_PART_TABLE_TYPE}=="", ENV{ID_PART_ENTRY_TYPE}=="", ENV{ID_FS_TYPE}=="", ENV{ID_PART_ENTRY_UUID}=="", TAG+="systemd", ENV{SYSTEMD_WANTS}+="systemd-repart-empty@$env{DEVNAME_SYSTEMD}.service"
 
 LABEL="repart_empty_disks_end"

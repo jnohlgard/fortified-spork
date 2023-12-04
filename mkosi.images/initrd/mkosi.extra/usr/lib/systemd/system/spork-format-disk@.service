@@ -1,0 +1,19 @@
+[Unit]
+Description=Format encrypted PV /dev/disk/by-partuuid/%I
+DefaultDependencies=no
+Wants=systemd-udevd.service
+After=systemd-udevd.service
+Wants=dev-security-fido.device
+After=dev-security-fido.device
+After=cryptsetup-pre.target
+RequiresMountsFor=%t/spork/luks
+ConditionPathExists=!%t/spork/luks/%I.luks
+Wants=luks-format-detached-by-partuuid@%i.service
+Before=luks-format-detached-by-partuuid@%i.service
+Wants=lvm2-pvcreate@dev-mapper-luks\x2d%i.service
+Before=lvm2-pvcreate@dev-mapper-luks\x2d%i.service
+Before=cryptsetup.target
+Before=spork-init-disk@%i.target
+Before=spork-init-disks.target
+Conflicts=shutdown.target
+Before=shutdown.target

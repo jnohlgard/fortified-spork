@@ -6,6 +6,6 @@ TEST!="/etc/initrd-release", GOTO="crypt_data_end"
 ENV{ID_PART_ENTRY_TYPE}=="0657fd6d-a4ab-43c4-84e5-0933c84b4f4f", GOTO="crypt_data_end"
 
 # Any partition without a recognized file system gets a systemd unit
-ENV{ID_FS_USAGE}=="", ENV{ID_PART_ENTRY_UUID}=="?*", TAG+="systemd", ENV{SYSTEMD_WANTS}+="systemd-cryptsetup-detached-by-partuuid@$env{ID_PART_ENTRY_UUID_SYSTEMD}.service"
+ENV{ID_FS_USAGE}=="", ENV{ID_PART_ENTRY_UUID}=="?*", TAG+="systemd", ENV{SYSTEMD_WANTS}+="spork-init-disk@$env{ID_PART_ENTRY_UUID_SYSTEMD}.target"
 
 LABEL="crypt_data_end"

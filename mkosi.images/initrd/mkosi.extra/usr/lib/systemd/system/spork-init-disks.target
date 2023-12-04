@@ -1,0 +1,23 @@
+[Unit]
+Description=Initialize encrypted storage
+DefaultDependencies=no
+Requires=spork-initrd-pre.target
+After=spork-initrd-pre.target
+After=systemd-udevd-kernel.socket
+After=systemd-udevd.service
+After=systemd-udev-trigger.service
+After=systemd-udev-settle.service
+Before=initrd-root-device.target
+Conflicts=initrd-root-device.target
+# Conflicts with all initrd mounts to avoid timing out while formatting the disks
+Before=initrd-fs.target initrd-root-fs.target initrd-usr-fs.target 
+Conflicts=initrd-fs.target initrd-root-fs.target initrd-usr-fs.target 
+Before=sysroot.mount sysroot-etc.mount sysroot-.overlay\x2detc.mount sysroot-usr.mount sysusr-usr.mount
+Conflicts=sysroot.mount sysroot-etc.mount sysroot-.overlay\x2detc.mount sysroot-usr.mount sysusr-usr.mount
+Before=shutdown.target initrd-switch-root.target
+Conflicts=shutdown.target initrd-switch-root.target
+Wants=systemd-reset-failed.service
+Before=systemd-reset-failed.service
+OnSuccess=default.target
+OnSuccessJobMode=replace
+JobTimeoutSec=infinity

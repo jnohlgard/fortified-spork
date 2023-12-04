@@ -1,0 +1,17 @@
+[Unit]
+Description=Initialize LVM2 PV on %f
+DefaultDependencies=no
+Requires=%i.device
+After=%i.device
+After=blockdev@%i.target
+Before=initrd-root-device.target initrd-fs.target
+Before=shutdown.target initrd-switch-root.target
+Conflicts=shutdown.target initrd-switch-root.target
+
+[Service]
+Type=oneshot
+ExecCondition=sh -c '! pvck "%f"'
+ExecStart=/usr/bin/pvcreate '%f'
+
+[Install]
+WantedBy=initrd.target

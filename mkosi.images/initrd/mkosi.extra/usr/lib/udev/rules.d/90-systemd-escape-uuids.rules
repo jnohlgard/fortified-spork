@@ -1,7 +1,6 @@
 ACTION=="remove", GOTO="systemd_escape_uuids_end"
 SUBSYSTEM!="block", GOTO="systemd_escape_uuids_end"
 
-ENV{ID_PART_ENTRY_UUID}=="?*", IMPORT{program}="udev_systemd_escape ID_PART_ENTRY_UUID_SYSTEMD '$env{ID_PART_ENTRY_UUID}'"
-ENV{ID_FS_UUID}=="?*", IMPORT{program}="udev_systemd_escape ID_FS_UUID_SYSTEMD '$env{ID_FS_UUID}'"
+ENV{DEVTYPE}=="?*", IMPORT{program}="udev_systemd_escape"
 
 LABEL="systemd_escape_uuids_end"

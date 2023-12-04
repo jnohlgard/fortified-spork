@@ -17,10 +17,12 @@ JobRunningTimeoutSec=infinite
 
 [Service]
 Type=oneshot
+RemainAfterExit=yes
 TimeoutStartSec=infinity
 ImportCredential=initrd-totp-machine
 ImportCredential=initrd-totp-user
 ExecStart=/usr/libexec/totp-mutual "${CREDENTIALS_DIRECTORY}/initrd-totp-machine" "${CREDENTIALS_DIRECTORY}/initrd-totp-user"
+ExecStartPost=printf '\n\n==== TOTP accepted ====\n\n' >/dev/console
 StandardOutput=tty
 StandardError=journal+console
 Restart=on-failure

@@ -1,0 +1,25 @@
+[Unit]
+Description=Create LUKS header for partition /dev/disk/by-%J/%I
+Documentation=man:cryptsetup-luksFormat(8)
+DefaultDependencies=no
+Requires=dev-disk-by\x2d%j-%i.device
+After=dev-disk-by\x2d%j-%i.device
+After=initrd-auth.target
+After=cryptsetup-pre.target
+Before=systemd-cryptsetup-detached-by-%j@%i.service
+Before=blockdev@dev-mapper-luks\x2d%i.target
+Before=cryptsetup.target
+Before=initrd-root-device.target
+Before=initrd-usr-fs.target initrd-root-fs.target
+Before=shutdown.target initrd-switch-root.target
+Conflicts=shutdown.target initrd-switch-root.target
+ConditionVirtualization=!container
+RequiresMountsFor=%t/spork/luks
+ConditionPathExists=!%t/spork/luks/%I.luks
+
+[Service]
+Type=oneshot
+StandardOutput=journal+console
+RemainAfterExit=yes
+ExecCondition=/usr/bin/udevadm lock -d '/dev/disk/by-%J/%I' /usr/libexec/is-disk-blank '/dev/disk/by-%J/%I'
+ExecStart=/usr/libexec/luksFormat-detached '%I'

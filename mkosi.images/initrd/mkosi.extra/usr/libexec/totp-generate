@@ -37,9 +37,6 @@ EOF
 cp -v "${outdir}/${keyid}" "${loadercredsdir}/${keyid}.cred"
 
 cat <<EOF
-New ${keyid} TOTP key:
-
-${new_key}
-
-
+New TOTP key <<${keyid}>>
+  -<([  ${new_key}  ])>-
 EOF

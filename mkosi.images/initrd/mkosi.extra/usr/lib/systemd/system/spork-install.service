@@ -1,0 +1,19 @@
+[Unit]
+Description=Create vg-sys volumes
+DefaultDependencies=no
+Wants=cryptsetup.target
+After=cryptsetup.target
+Before=initrd-root-device.target initrd-fs.target
+Before=shutdown.target initrd-switch-root.target
+Conflicts=shutdown.target initrd-switch-root.target
+ConditionDirectoryNotEmpty=!/dev/vg-sys/
+RequiresMountsFor=%t/spork/sysimages
+
+[Service]
+Type=oneshot
+StandardOutput=journal+console
+StandardError=inherit
+ExecStart=/usr/libexec/spork-install
+
+[Install]
+WantedBy=initrd.target

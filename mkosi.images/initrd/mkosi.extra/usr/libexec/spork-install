@@ -1,0 +1,84 @@
+#!/usr/bin/sh
+set -eu
+
+die() {
+  if [ $# -gt 0 ]; then
+    >&2 printf "$@"
+  fi
+  exit 1
+}
+
+usage() {
+  printf 'Usage: %s <partition_uuid> [extra cryptsetup luksFormat args]\n' "${0##*/}"
+  printf 'Create a detached header and format the given partition\n'
+}
+
+if [ $# -ne 0 ]; then
+  usage >&2
+  exit 2
+fi
+
+printf 'Creating vg-sys for OS installation\n'
+
+printf 'lsblk output:\n'
+lsblk -o +FSTYPE,LABEL
+printf 'These are the PVs currently available:\n'
+pvs -o +pv_in_use
+
+pvs_found="$(pvs -o pv_name --noheadings -S 'pv_in_use != used')"
+printf 'Select PVs to use for vg-sys (showing unused PVs only), space-separated list:\n'
+printf '%s\n' ${pvs_found} | nl
+
+blkdevs=
+while [ -z "${blkdevs}" ]; do
+  selected_pvs="$(systemd-ask-password --icon drive-harddisk -e 'Enter PV number(s) or device node(s), e.g. "/dev/sda1" (space-separated list)')"
+  for pv in ${selected_pvs}; do
+    dev=
+    case "${pv}" in
+      /dev/*)
+        if [ -b "${pv}" ]; then
+          # Block device node
+          dev="${pv}"
+        fi
+        ;;
+      *)
+        if [ -n "${pv}" ] && [ "${pv}" -eq "${pv}" ]; then
+          # Number, pick a line in the list
+          line="$(printf '%s\n' ${pvs_found} | sed -e "${selected_pv}q;d")"
+          if [ -n "${line}" ]; then
+            # valid line number, use that device
+            dev="${line}"
+          fi
+        fi
+        ;;
+    esac
+    if [ -z "${dev}" ]; then
+      >&2 printf 'Bad input "%s"\n' "${pv}"
+      >&2 printf 'Try again.\n'
+      blkdevs=
+      break
+    fi
+    blkdevs="${blkdevs} ${dev}"
+  done
+done
+
+vgcreate -v \
+  --pvmetadatacopies 2 \
+  --vgmetadatacopies all \
+  --setautoactivation y \
+  vg-sys \
+  ${blkdevs}
+
+printf 'Creating LVs\n'
+lvcreate -v -ay -n etc -L 100M vg-sys
+lvcreate -v -ay -n root -L 100M vg-sys
+lvcreate -v -ay -n usr -L 4G vg-sys
+lvcreate -v -ay -n usr-verity -L 200M vg-sys
+lvcreate -v -ay -n usr-verity-sig -L 16K vg-sys
+printf 'Creating file systems and copying blocks\n'
+mkfs.xfs -m rmapbt=1 -L etc /dev/vg-sys/etc
+dd status=progress bs=4M if=/run/spork/sysimages/spork_1.0.0-beta1.root-x86-64.raw of=/dev/vg-sys/root
+dd status=progress bs=4M if=/run/spork/sysimages/spork_1.0.0-beta1.usr-x86-64.raw of=/dev/vg-sys/usr
+dd status=progress bs=4M if=/run/spork/sysimages/spork_1.0.0-beta1.usr-x86-64-verity.raw of=/dev/vg-sys/usr-verity
+dd status=progress bs=4M if=/run/spork/sysimages/spork_1.0.0-beta1.usr-x86-64-verity-sig.raw of=/dev/vg-sys/usr-verity-sig
+

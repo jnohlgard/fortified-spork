@@ -1,0 +1,18 @@
+[Unit]
+Description=Initialize /dev/mapper/luks-%I
+DefaultDependencies=no
+Wants=systemd-udevd.service
+After=systemd-udevd.service
+Wants=dev-security-fido.device
+After=dev-security-fido.device
+After=spork-initrd-pre.target
+After=cryptsetup-pre.target
+Wants=spork-format-disk@%i.target
+After=spork-format-disk@%i.target
+Wants=systemd-cryptsetup-detached-by-partuuid@%i.service
+After=systemd-cryptsetup-detached-by-partuuid@%i.service
+Wants=spork-init-disks.target
+Before=spork-init-disks.target
+Before=cryptsetup.target
+Conflicts=shutdown.target
+Before=shutdown.target

@@ -1,0 +1,134 @@
+#!/usr/bin/sh
+set -eu
+
+die() {
+  if [ $# -gt 0 ]; then
+    >&2 printf "$@"
+  fi
+  exit 1
+}
+
+usage() {
+  printf 'Usage: %s <partition_uuid> [extra cryptsetup luksFormat args]\n' "${0##*/}"
+  printf 'Create a detached header and format the given partition\n'
+}
+
+if [ $# -lt 1 ]; then
+  usage >&2
+  exit 2
+fi
+
+if [ "$1" = '--help' ]; then
+  usage
+  exit 0
+fi
+
+random_number_in_range() {
+  if [ $# -ne 1 ]; then
+    die 'Usage: random_number_in_range <min-max>\n'
+  fi
+  shuf -i "$1" -n 1
+}
+
+partuuid="$1";shift
+blkdev="/dev/disk/by-partuuid/${partuuid}"
+
+if cryptsetup isLuks "${blkdev}"; then
+  die '%s contains a LUKS header\n' "${blkdev}"
+fi
+
+trap 'die "Something went wrong\n"' QUIT ABRT INT TERM
+
+header_file="/run/spork/luks/${partuuid}.luks"
+luks_mapping="luks-${partuuid}"
+if [ -e "${header_file}" ]; then
+  die 'Header file %s already exists, aborting.' "${header_file}"
+fi
+
+if ! /usr/libexec/is-disk-blank "${blkdev}"; then
+  die '%s is not zeroed\nUse blkdiscard <device> to completely wipe the device.\n' "${blkdev}"
+fi
+
+printf 'Discarding all blocks on %s\n' "${blkdev}"
+if [ "$(systemd-ask-password --emoji=no --icon=dialog-warning --id="luksFormat-detached:${blkdev}" -e "WARNING! THIS WILL ERASE EVERYTHING ON DEVICE ${blkdev}! Do you want to continue? (answer with uppercase 'yes')")" != 'YES' ]; then
+  die 'Aborting due to user input\n'
+fi
+
+# Using a medium discard block size to avoid errors when running in QEMU
+blkdiscard -v -p 1G "${blkdev}"
+
+wipedev="tmp-cryptwipe-${partuuid}-${RANDOM}"
+
+printf 'Writing white noise to leading 4 GiB of device %s via dm-crypt mapping %s\n' "${blkdev}" "${wipedev}"
+# Write random junk in the leading GBs of the drive for hiding the true
+# beginning of the encrypted data
+cryptsetup open --type plain \
+  --key-file /dev/urandom \
+  --sector-size 4096 \
+  --cipher aes-xts-plain64 \
+  --key-size 512 \
+  "${blkdev}" \
+  "${wipedev}"
+
+time dd if=/dev/zero of="/dev/mapper/${wipedev}" bs=4M count=1024 status=progress
+
+cryptsetup close "${wipedev}"
+
+printf 'Creating detached LUKS2 header\n'
+# random starting offset aligned on a 4MB boundary (SSD friendly)
+start_offset="$(random_number_in_range 128-1024)"
+start_offset_mb="$((start_offset * 4))"
+
+keyfile_tmp="$(mktemp -t "detached-luks-temporary-keyfile-XXXXXXXX.bin")"
+dd if=/dev/urandom bs=128 count=1 of="${keyfile_tmp}"
+# need to specify --luks2-keyslots-size to avoid having a multi-GB header file
+# when the data device offset is large.
+# --offset must be given in 512 byte sectors.
+cryptsetup luksFormat --type luks2 \
+  --header "${header_file}" \
+  --key-file "${keyfile_tmp}" \
+  --luks2-keyslots-size 16352k \
+  --luks2-metadata-size 16k \
+  --offset "$((start_offset_mb * 2048))" \
+  "${blkdev}" \
+  "$@"
+
+printf 'Update header config block to enable discards by default\n'
+cryptsetup open --type luks2 \
+  --header "${header_file}" \
+  --key-file "${keyfile_tmp}" \
+  --persistent \
+  --allow-discards \
+  "${blkdev}" \
+  "${luks_mapping}"
+cryptsetup close "${luks_mapping}"
+
+printf 'Binding encryption to the TPM2 chip in this machine and this exact UKI and initrd only (PCR 11)\n'
+systemd-cryptenroll --unlock-key-file="${keyfile_tmp}" \
+  --tpm2-device=auto \
+  --tpm2-pcrs=4+7+11+14 \
+  "${header_file}"
+
+printf 'Adding FIDO2 enrollment as a recovery unlock method and wiping temporary key\n'
+systemd-cryptenroll --unlock-key-file="${keyfile_tmp}" \
+  --wipe-slot=0 \
+  --fido2-device=auto \
+  "${header_file}"
+
+# Shred the temporary key since we don't need it anymore
+shred -z -u "${keyfile_tmp}"
+
+printf '\n\n'
+printf '%s\n' \
+  'Next steps:' \
+  '1. Create a recovery key!' \
+  '2. Create file system on encrypted device.' \
+  '3. Make backups of this USB drive.' \
+  '' \
+  '=========================================' \
+  '| WRITE DOWN THE RECOVERY KEY ON PAPER! |' \
+  '=========================================' \
+  ''
+
+printf 'All done!\n'
+trap '' QUIT
