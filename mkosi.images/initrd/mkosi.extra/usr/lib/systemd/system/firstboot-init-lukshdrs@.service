@@ -6,6 +6,7 @@ Requires=dev-security-fido.device
 After=dev-security-fido.device
 Requires=%i.device
 After=%i.device
+Before=initrd-init-disks-pre.target
 Wants=cryptsetup-pre.target
 After=cryptsetup-pre.target
 Before=systemd-cryptsetup@lukshdrs.service

@@ -14,5 +14,7 @@ After=systemd-cryptsetup-detached-by-partuuid@%i.service
 Wants=spork-init-disks.target
 Before=spork-init-disks.target
 Before=cryptsetup.target
+Before=initrd-root-device.target systemd-fsck-root.service
+Before=initrd-fs.target initrd-root-fs.target initrd-usr-fs.target 
 Conflicts=shutdown.target
 Before=shutdown.target

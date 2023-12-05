@@ -1,12 +1,14 @@
 [Unit]
-Description=Create LUKS header for partition /dev/disk/by-%J/%I
+Description=Format partition /dev/disk/by-%J/%I for LUKS encryption
 Documentation=man:cryptsetup-luksFormat(8)
+
 DefaultDependencies=no
 Requires=dev-disk-by\x2d%j-%i.device
 After=dev-disk-by\x2d%j-%i.device
 After=initrd-auth.target
+Wants=cryptsetup-pre.target
 After=cryptsetup-pre.target
-Before=systemd-cryptsetup-detached-by-%j@%i.service
+Before=systemd-cryptsetup-by-%j@%i.service
 Before=blockdev@dev-mapper-luks\x2d%i.target
 Before=cryptsetup.target
 Before=initrd-root-device.target
@@ -14,8 +16,6 @@ Before=initrd-usr-fs.target initrd-root-fs.target
 Before=shutdown.target initrd-switch-root.target
 Conflicts=shutdown.target initrd-switch-root.target
 ConditionVirtualization=!container
-RequiresMountsFor=%t/spork/luks
-ConditionPathExists=!%t/spork/luks/%I.luks
 
 [Service]
 Type=oneshot
@@ -26,11 +26,11 @@ RemainAfterExit=yes
 #Environment="LUKSFORMAT_CIPHER_KEYSIZE="
 #Environment="LUKSFORMAT_INTEGRITY="
 #Environment="LUKSFORMAT_LABEL="
-Environment="LUKSFORMAT_TPM2_DEVICE=auto"
-Environment="LUKSFORMAT_TPM2_PCRS=4+7+11+14"
-Environment="LUKSFORMAT_DETACHED_HEADER=%t/spork/luks/%I.luks"
+#Environment="LUKSFORMAT_TPM2_DEVICE=auto"
+#Environment="LUKSFORMAT_TPM2_PCRS=4+7+11+14"
+#Environment="LUKSFORMAT_DETACHED_HEADER="
 #Environment="LUKSFORMAT_FIDO2_DEVICE=auto"
 # Run mkfs or similar tool on the disk after formatting:
 #Environment="LUKSFORMAT_MKFS="
 ExecCondition=/usr/bin/udevadm lock -d '/dev/disk/by-%J/%I' /usr/libexec/is-disk-blank '/dev/disk/by-%J/%I'
-ExecStart=/usr/libexec/luks-format '%I'
+ExecStart=/usr/libexec/luks-format '/dev/disk/by-%J/%I'

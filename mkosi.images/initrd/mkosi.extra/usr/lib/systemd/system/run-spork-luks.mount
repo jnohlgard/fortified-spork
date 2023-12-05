@@ -1,8 +1,8 @@
 [Unit]
 Description=Mount %f
-After=blockdev@dev-mapper-lukshdrs.target
-BindsTo=dev-mapper-lukshdrs.device
-After=dev-mapper-lukshdrs.device
+After=blockdev@dev-mapper-luks\x2dlukshdrs.target
+BindsTo=dev-mapper-luks\x2dlukshdrs.device
+After=dev-mapper-luks\x2dlukshdrs.device
 
 [Mount]
 What=/dev/mapper/lukshdrs

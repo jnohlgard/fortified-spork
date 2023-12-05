@@ -1,8 +1,8 @@
 [Unit]
-Description=Initialize encrypted storage
+Description=Initialize encrypted storage on unused disks
 DefaultDependencies=no
-Requires=spork-initrd-pre.target
-After=spork-initrd-pre.target
+Requires=initrd-init-disks-pre.target
+After=initrd-init-disks-pre.target
 After=systemd-udevd-kernel.socket
 After=systemd-udevd.service
 After=systemd-udev-trigger.service
@@ -17,5 +17,5 @@ Conflicts=sysroot.mount sysroot-etc.mount sysroot-.overlay\x2detc.mount sysroot-
 Before=shutdown.target initrd-switch-root.target
 Conflicts=shutdown.target initrd-switch-root.target
 OnSuccess=default.target
-OnSuccessJobMode=replace
+OnSuccessJobMode=isolate
 JobTimeoutSec=infinity

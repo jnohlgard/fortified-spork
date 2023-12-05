@@ -3,6 +3,7 @@ Description=Begin initialize encrypted storage
 DefaultDependencies=no
 After=systemd-pcrphase-initrd.service
 After=initrd-auth.target
+Wants=spork-init-disks.target
 Before=spork-init-disks.target
 Before=cryptsetup.target
 Before=shutdown.target initrd-switch-root.target
