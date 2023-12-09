@@ -16,8 +16,8 @@ Conflicts=shutdown.target initrd-switch-root.target
 [Service]
 Type=oneshot
 StandardOutput=journal+console
-ExecCondition=sh -c 'cryptsetup isLuks "%f" && echo | cryptsetup open --test-passphrase --disable-external-tokens "%f"'
-ExecStart=systemd-cryptenroll --unlock-key-file=/dev/null --fido2-device=auto --wipe-slot=empty "%f"
+ExecCondition=udevadm lock -d '%f' sh -c "cryptsetup isLuks '%f' && echo | cryptsetup open --test-passphrase --disable-external-tokens '%f'"
+ExecStart=udevadm lock -d '%f' systemd-cryptenroll --unlock-key-file=/dev/null --fido2-device=auto --wipe-slot=empty '%f'
 
 [Install]
 WantedBy=initrd.target

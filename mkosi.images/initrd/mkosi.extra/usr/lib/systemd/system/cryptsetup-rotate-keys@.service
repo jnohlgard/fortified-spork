@@ -17,7 +17,7 @@ TimeoutSec=infinity
 Environment="EXTRA_REENCRYPT_ARGS="
 ExecStartPre=cryptsetup isLuks '%f'
 ExecStartPre=echo 'Rotating volume encryption key on %f. This may take some time...'
-ExecStart=udevadm lock -d '%f' sh -c 'echo | cryptsetup reencrypt --progress-frequency=2 ${EXTRA_REENCRYPT_ARGS} "%f"'
+ExecStart=udevadm lock -d '%f' sh -c "echo | cryptsetup reencrypt --progress-frequency=2 ${EXTRA_REENCRYPT_ARGS} '%f'"
 
 [Install]
 WantedBy=initrd.target

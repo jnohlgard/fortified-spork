@@ -26,8 +26,8 @@ RemainAfterExit=yes
 #Environment="LUKSFORMAT_CIPHER_KEYSIZE="
 #Environment="LUKSFORMAT_INTEGRITY="
 #Environment="LUKSFORMAT_LABEL="
-Environment="LUKSFORMAT_TPM2_DEVICE=auto"
-Environment="LUKSFORMAT_TPM2_PCRS=4+7+11+14"
+#Environment="LUKSFORMAT_TPM2_DEVICE="
+#Environment="LUKSFORMAT_TPM2_PCRS="
 Environment="LUKSFORMAT_DETACHED_HEADER=%t/spork/luks/%I.luks"
 #Environment="LUKSFORMAT_FIDO2_DEVICE=auto"
 # Run mkfs or similar tool on the disk after formatting:

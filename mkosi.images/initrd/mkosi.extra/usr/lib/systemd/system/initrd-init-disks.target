@@ -1,21 +1,19 @@
 [Unit]
-Description=Initialize encrypted storage on unused disks
+Description=Initialize encrypted storage
 DefaultDependencies=no
-Requires=initrd-init-disks-pre.target
-After=initrd-init-disks-pre.target
 After=systemd-udevd-kernel.socket
 After=systemd-udevd.service
 After=systemd-udev-trigger.service
 After=systemd-udev-settle.service
-# Conflicts with all initrd mounts to avoid timing out while formatting the disks
+After=cryptsetup-pre.target
+After=initrd-auth.target
+After=initrd-init-disks-pre.target
+Before=cryptsetup.target
 Before=initrd-root-device.target systemd-fsck-root.service
-Conflicts=initrd-root-device.target systemd-fsck-root.service
 Before=initrd-fs.target initrd-root-fs.target initrd-usr-fs.target 
-Conflicts=initrd-fs.target initrd-root-fs.target initrd-usr-fs.target 
 Before=sysroot.mount sysroot-etc.mount sysroot-.overlay\x2detc.mount sysroot-usr.mount sysusr-usr.mount
-Conflicts=sysroot.mount sysroot-etc.mount sysroot-.overlay\x2detc.mount sysroot-usr.mount sysusr-usr.mount
 Before=shutdown.target initrd-switch-root.target
 Conflicts=shutdown.target initrd-switch-root.target
-OnSuccess=default.target
-OnSuccessJobMode=isolate
+OnSuccess=initrd-install-sys.target
+OnSuccessJobMode=replace
 JobTimeoutSec=infinity

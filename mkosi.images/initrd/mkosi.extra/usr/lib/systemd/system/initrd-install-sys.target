@@ -1,19 +1,17 @@
 [Unit]
-Description=Initialize encrypted storage
+Description=Install system images
 DefaultDependencies=no
-Requires=spork-initrd-pre.target
-After=spork-initrd-pre.target
 After=systemd-udevd-kernel.socket
 After=systemd-udevd.service
 After=systemd-udev-trigger.service
 After=systemd-udev-settle.service
-# Conflicts with all initrd mounts to avoid timing out while formatting the disks
+After=cryptsetup-pre.target
+After=initrd-auth.target
+After=initrd-init-disks.target
+After=cryptsetup.target
 Before=initrd-root-device.target systemd-fsck-root.service
-Conflicts=initrd-root-device.target systemd-fsck-root.service
 Before=initrd-fs.target initrd-root-fs.target initrd-usr-fs.target 
-Conflicts=initrd-fs.target initrd-root-fs.target initrd-usr-fs.target 
 Before=sysroot.mount sysroot-etc.mount sysroot-.overlay\x2detc.mount sysroot-usr.mount sysusr-usr.mount
-Conflicts=sysroot.mount sysroot-etc.mount sysroot-.overlay\x2detc.mount sysroot-usr.mount sysusr-usr.mount
 Before=shutdown.target initrd-switch-root.target
 Conflicts=shutdown.target initrd-switch-root.target
 OnSuccess=default.target

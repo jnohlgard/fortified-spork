@@ -22,7 +22,7 @@ RemainAfterExit=yes
 TimeoutSec=infinity
 OOMScoreAdjust=500
 Environment="CRYPTSETUP_OPTIONS=swap,discard"
-ExecStartPre=sh -eu -c 'lsblk -rnd -o PARTTYPE "/dev/disk/by-%J/%I" | grep -q -F -x "0657fd6d-a4ab-43c4-84e5-0933c84b4f4f"'
+ExecStartPre=sh -eu -c "lsblk -rnd -o PARTTYPE '/dev/disk/by-%J/%I' | grep -Fxq '0657fd6d-a4ab-43c4-84e5-0933c84b4f4f'"
 ExecStart=/usr/lib/systemd/systemd-cryptsetup attach 'swap-%I' '/dev/disk/by-%J/%I' '/dev/urandom' "${CRYPTSETUP_OPTIONS}"
 ExecStart=/usr/lib/systemd/systemd-makefs swap '/dev/mapper/swap-%I'
 ExecStop=/usr/lib/systemd/systemd-cryptsetup detach 'swap-%I'

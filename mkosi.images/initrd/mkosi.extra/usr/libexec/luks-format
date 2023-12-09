@@ -15,7 +15,8 @@ die() {
 
 usage() {
   printf 'Usage: %s <device>\n' "${0##*/}"
-  printf 'Create a detached header and format the given partition\n'
+  printf 'Format the given partition as a LUKS2 device.\n'
+  printf 'Optional behaviour can be controlled via environment variables (see source).\n'
 }
 
 if [ $# -ne 1 ]; then
@@ -49,10 +50,8 @@ fi
 if [ -z "${locked}" ]; then
   printf 'Acquiring exclusive lock on %s\n' "${blkdev}"
   set -x
-  exec udevadm lock -d "${blkdev}" "$0" 'locked' "$@"
+  exec udevadm lock -d "${blkdev}" "$0" 'locked' "${blkdev}" "$@"
 fi
-
-trap 'die "Something went wrong\n"' QUIT ABRT INT TERM
 
 if [ -z "${LUKSFORMAT_LABEL+set}" ]; then
   LUKSFORMAT_LABEL="$(lsblk -rnd -o PARTLABEL "${blkdev}" || printf '%s' "${blkdev##*/}")"
@@ -65,7 +64,7 @@ fi
 # Enroll TPM2 key after formatting?
 : "${LUKSFORMAT_TPM2_DEVICE:=}"
 # TPM2 PCRs to bind encryption to
-: "${LUKSFORMAT_TPM2_PCRS=4+7+11+14}"
+: "${LUKSFORMAT_TPM2_PCRS=7}"
 # Create detached header?
 : "${LUKSFORMAT_DETACHED_HEADER:=}"
 : "${LUKSFORMAT_FIDO2_DEVICE:=auto}"
@@ -73,7 +72,7 @@ fi
 : "${LUKSFORMAT_MKFS:=}"
 
 if [ -n "${LUKSFORMAT_DETACHED_HEADER}" ] && [ -e "${LUKSFORMAT_DETACHED_HEADER}" ]; then
-  die 'Header file %s already exists, aborting.' "${LUKSFORMAT_DETACHED_HEADER}"
+  die 'Header file "%s" already exists, aborting.\n' "${LUKSFORMAT_DETACHED_HEADER}"
 fi
 
 current_fstype="$(lsblk -r -o FSTYPE -d -n "${blkdev}")"
@@ -84,10 +83,6 @@ fi
 detected_magics="$(wipefs -n "${blkdev}")"
 if [ -n "${detected_magics}" ]; then
   die 'Error: Device %s already contains something:\n%s\n' "${blkdev}" "${detected_magics}"
-fi
-
-if ! /usr/libexec/is-disk-blank "${blkdev}"; then
-  die '%s is not zeroed\nUse blkdiscard <device> to completely wipe the device.\n' "${blkdev}"
 fi
 
 if ! systemd-ask-password \
@@ -131,7 +126,7 @@ if [ -n "${LUKSFORMAT_DETACHED_HEADER}" ]; then
   start_offset_blocks="$((start_offset_mb * 2048))"
 fi
 
-keyfile_tmp="$(mktemp -t "detached-luks-temporary-keyfile-XXXXXXXX.bin")"
+keyfile_tmp="$(mktemp -t "luks-format-temporary-keyfile-XXXXXXXX.bin")"
 dd if=/dev/urandom bs=256 count=1 of="${keyfile_tmp}" status=none
 
 # need to specify --luks2-keyslots-size to avoid having a multi-GB header file
@@ -147,25 +142,36 @@ cryptsetup luksFormat \
   --label "${LUKSFORMAT_LABEL}" \
   --cipher "${LUKSFORMAT_CIPHER}" \
   --key-size "${LUKSFORMAT_CIPHER_KEYSIZE}" \
-  ${LUKSFORMAT_INTEGRITY+:--integrity "${LUKSFORMAT_INTEGRITY}"} \
-  ${start_offset_blocks:+--offset "${start_offset_blocks}" --luks2-keyslots-size "16352k" --luks2-metadata-size "16k"} \
+  --luks2-keyslots-size "16352k" \
+  --luks2-metadata-size "16k" \
+  ${LUKSFORMAT_INTEGRITY:+--integrity "${LUKSFORMAT_INTEGRITY}"} \
+  ${start_offset_blocks:+--offset "${start_offset_blocks}"} \
   "${blkdev}"
 
 tmp_mapping="tmp-luksformat-${blkdev##*/}-${RANDOM}"
-printf 'Update header config block to enable discards by default\n'
+printf 'Activating dm-crypt mapping %s\n' "${tmp_mapping}"
 cryptsetup open --type luks2 \
+  ${LUKSFORMAT_DETACHED_HEADER:+--header "${LUKSFORMAT_DETACHED_HEADER}"} \
+  --key-file "${keyfile_tmp}" \
+  "${blkdev}" \
+  "${tmp_mapping}"
+
+printf 'Trying to update header config block to enable discards by default\n'
+if ! cryptsetup refresh \
   ${LUKSFORMAT_DETACHED_HEADER:+--header "${LUKSFORMAT_DETACHED_HEADER}"} \
   --key-file "${keyfile_tmp}" \
   --persistent \
   --allow-discards \
-  "${blkdev}" \
-  "${tmp_mapping}"
+  "${tmp_mapping}"; then
+  printf 'Header refresh failed, probably missing discard support, ignoring error.\n'
+fi
 
 if [ -n "${LUKSFORMAT_MKFS}" ]; then
   printf 'Running mkfs command: %s\n' "${LUKSFORMAT_MKFS} \"/dev/mapper/${tmp_mapping}\""
   udevadm lock -d "/dev/mapper/${tmp_mapping}" sh -c "${LUKSFORMAT_MKFS} \"/dev/mapper/${tmp_mapping}\""
 fi
 
+printf 'Deactivating dm-crypt mapping %s\n' "${tmp_mapping}"
 cryptsetup close "${tmp_mapping}"
 
 enroll_dev="${LUKSFORMAT_DETACHED_HEADER:-${blkdev}}"
@@ -199,4 +205,3 @@ printf '%s\n' \
   ''
 
 printf 'All done!\n'
-trap '' QUIT

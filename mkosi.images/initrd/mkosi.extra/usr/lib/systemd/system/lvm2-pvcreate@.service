@@ -10,7 +10,7 @@ Conflicts=shutdown.target initrd-switch-root.target
 
 [Service]
 Type=oneshot
-ExecCondition=sh -c '! pvck "%f"'
+ExecCondition=sh -c "! pvdisplay --column '%f'"
 ExecStart=/usr/bin/pvcreate '%f'
 
 [Install]

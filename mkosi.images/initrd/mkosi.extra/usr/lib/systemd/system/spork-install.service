@@ -3,6 +3,7 @@ Description=Create vg-sys volumes
 DefaultDependencies=no
 Wants=cryptsetup.target
 After=cryptsetup.target
+After=initrd-init-disks.target
 Before=initrd-root-device.target initrd-fs.target
 Before=shutdown.target initrd-switch-root.target
 Conflicts=shutdown.target initrd-switch-root.target
@@ -16,4 +17,4 @@ StandardError=inherit
 ExecStart=/usr/libexec/spork-install
 
 [Install]
-WantedBy=initrd.target
+WantedBy=initrd-install-sys.target
