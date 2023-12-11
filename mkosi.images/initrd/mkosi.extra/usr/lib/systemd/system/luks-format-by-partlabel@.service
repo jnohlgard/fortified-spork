@@ -9,6 +9,7 @@ After=initrd-auth.target
 Wants=cryptsetup-pre.target
 After=cryptsetup-pre.target
 Before=systemd-cryptsetup-by-%j@%i.service
+Before=dev-mapper-luks\x2d%i.device blockdev@dev-mapper-luks\x2d%i.target
 Before=blockdev@dev-mapper-luks\x2d%i.target
 Before=cryptsetup.target
 Before=initrd-root-device.target
@@ -16,18 +17,20 @@ Before=initrd-usr-fs.target initrd-root-fs.target
 Before=shutdown.target initrd-switch-root.target
 Conflicts=shutdown.target initrd-switch-root.target
 ConditionVirtualization=!container
+OnSuccess=systemd-cryptsetup-by-%j@%i.service
 
 [Service]
 Type=oneshot
 StandardOutput=journal+console
-RemainAfterExit=yes
+SyslogIdentifier=luks-format-%I
+#RemainAfterExit=yes
 # The luksFormat script supports some environment variables:
 #Environment="LUKSFORMAT_CIPHER="
 #Environment="LUKSFORMAT_CIPHER_KEYSIZE="
 #Environment="LUKSFORMAT_INTEGRITY="
 #Environment="LUKSFORMAT_LABEL="
-#Environment="LUKSFORMAT_TPM2_DEVICE=auto"
-#Environment="LUKSFORMAT_TPM2_PCRS=4+7+11+14"
+#Environment="LUKSFORMAT_TPM2_DEVICE="
+#Environment="LUKSFORMAT_TPM2_PCRS="
 #Environment="LUKSFORMAT_DETACHED_HEADER="
 #Environment="LUKSFORMAT_FIDO2_DEVICE=auto"
 # Run mkfs or similar tool on the disk after formatting:

@@ -2,7 +2,6 @@
 Description=Cryptography Setup for /dev/mapper/swap-%I
 Documentation=man:crypttab(5) man:systemd-cryptsetup-generator(8) man:systemd-cryptsetup@.service(8)
 DefaultDependencies=no
-IgnoreOnIsolate=true
 Wants=cryptsetup-pre.target
 After=cryptsetup-pre.target systemd-udevd-kernel.socket
 After=systemd-random-seed.service

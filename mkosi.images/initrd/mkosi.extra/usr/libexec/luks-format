@@ -100,9 +100,9 @@ if [ -n "${LUKSFORMAT_DETACHED_HEADER}" ]; then
   # reports too large maximum discard size in certain scenarios)
   # Fall back to zero-filling the first 1GB of the device if discard fails
   blkdiscard -v -p 1G "${blkdev}" || blkdiscard -v "${blkdev}" || blkdiscard -v -z -p 16M -l 1G "${blkdev}"
-  
-  wipedev="tmp-cryptwipe-${devname}-${RANDOM}"
-  
+
+  wipedev="tmp-cryptwipe-${blkdev##*/}-${RANDOM}"
+
   printf 'Writing white noise to leading 4 GiB of device %s via dm-crypt mapping %s\n' "${blkdev}" "${wipedev}"
   # Write random junk in the leading GBs of the drive for hiding the true
   # beginning of the encrypted data
@@ -113,10 +113,26 @@ if [ -n "${LUKSFORMAT_DETACHED_HEADER}" ]; then
     --key-size 512 \
     "${blkdev}" \
     "${wipedev}"
-  
-  time udevadm lock -d "/dev/mapper/${wipedev}" dd if=/dev/zero of="/dev/mapper/${wipedev}" bs=4M count=1024 status=progress
-  
-  cryptsetup close "${wipedev}"
+  #time udevadm lock -d "/dev/mapper/${wipedev}" dd if=/dev/zero of="/dev/mapper/${wipedev}" bs=4M count=1024 status=progress
+  time udevadm lock -d "/dev/mapper/${wipedev}" dd if=/dev/zero of="/dev/mapper/${wipedev}" bs=4M count=32 status=progress
+
+
+  if ! cryptsetup close "${wipedev}" || cryptsetup close "${wipedev}" --debug; then
+    printf 'Failed to close cryptwipe mapping %s: %s\n' "${wipedev}" "$?"
+    printf 'Will retry...\n'
+  fi
+  if cryptsetup status "${wipedev}"; then
+    printf 'dm-crypt mapping %s is still hanging on... waiting 1 second to let udev catch up\n' "${wipedev}"
+    printf 'Some debug info:\n'
+    ls -la "/dev/mapper/${wipedev}" || true
+    lsof -w | grep -F -e "/dev/dm-" -e "${wipedev}" || true
+    sleep 1
+    if ! cryptsetup close --debug "${wipedev}"; then
+      printf 'Failed to close cryptwipe mapping %s: %s\n' "${wipedev}" "$?"
+      printf 'Falling back to deferred close\n'
+      cryptsetup close --debug --deferred "${wipedev}"
+    fi
+  fi
 
   printf 'Creating detached LUKS2 header %s\n' "${LUKSFORMAT_DETACHED_HEADER}"
   # random starting offset aligned on a 4MB boundary (SSD friendly)
@@ -129,6 +145,7 @@ fi
 keyfile_tmp="$(mktemp -t "luks-format-temporary-keyfile-XXXXXXXX.bin")"
 dd if=/dev/urandom bs=256 count=1 of="${keyfile_tmp}" status=none
 
+set -x
 # need to specify --luks2-keyslots-size to avoid having a multi-GB header file
 # when the data device offset is large.
 # the temporary key above has high entropy so using a quicker PBKDF method should be fine here.
@@ -172,22 +189,49 @@ if [ -n "${LUKSFORMAT_MKFS}" ]; then
 fi
 
 printf 'Deactivating dm-crypt mapping %s\n' "${tmp_mapping}"
-cryptsetup close "${tmp_mapping}"
+if ! cryptsetup close "${tmp_mapping}" || cryptsetup close "${tmp_mapping}" --debug; then
+  printf 'Failed to close temporary dm-crypt mapping %s: %s\n' "${tmp_mapping}" "$?"
+  printf 'Will retry...\n'
+fi
+if cryptsetup status "${tmp_mapping}"; then
+  printf 'dm-crypt mapping %s is still hanging on... waiting 1 second to let udev catch up\n' "${tmp_mapping}"
+  printf 'Some debug info:\n'
+  ls -la "/dev/mapper/${tmp_mapping}" || true
+  lsof -w | grep -F -e "/dev/dm-" -e "${tmp_mapping}" || true
+  sleep 1
+  if ! cryptsetup close --debug "${tmp_mapping}"; then
+    printf 'Failed to close cryptwipe mapping %s: %s\n' "${tmp_mapping}" "$?"
+    printf 'Falling back to deferred close\n'
+    cryptsetup close --debug --deferred "${tmp_mapping}"
+  fi
+fi
 
 enroll_dev="${LUKSFORMAT_DETACHED_HEADER:-${blkdev}}"
 if [ -n "${LUKSFORMAT_TPM2_DEVICE:-}" ]; then
   printf 'Binding encryption to TPM2 device %s and PCRs %s\n' "${LUKSFORMAT_TPM2_DEVICE}" "${LUKSFORMAT_TPM2_PCRS}"
   systemd-cryptenroll --unlock-key-file="${keyfile_tmp}" \
     --tpm2-device="${LUKSFORMAT_TPM2_DEVICE}" \
-    --tpm2-pcrs="${LUKSFORMAT_TPM2_PCRS}"
+    --tpm2-pcrs="${LUKSFORMAT_TPM2_PCRS}" \
     "${enroll_dev}"
 fi
 
 printf 'Adding FIDO2 as an unlock method and wiping temporary key\n'
-systemd-cryptenroll --unlock-key-file="${keyfile_tmp}" \
+# Trying to work around a race on the FIDO2 device
+flock -x --verbose /dev/security/fido true
+retries=0
+until systemd-cryptenroll --unlock-key-file="${keyfile_tmp}" \
   --wipe-slot=password \
   --fido2-device="${LUKSFORMAT_FIDO2_DEVICE}" \
-  "${enroll_dev}"
+  "${enroll_dev}"; do
+  if [ "${retries}" -gt 5 ]; then
+    printf 'Giving up enrolling FIDO2 for %s.\n' "${enroll_dev}"
+    exit 3
+  fi
+  printf 'Failed to enroll FIDO2 device for %s, retrying...\n' "${enroll_dev}"
+  sleep 1
+  flock -x --verbose /dev/security/fido true
+  retries=$((retries + 1))
+done
 
 # Shred the temporary key since we don't need it anymore
 shred -z -u "${keyfile_tmp}"

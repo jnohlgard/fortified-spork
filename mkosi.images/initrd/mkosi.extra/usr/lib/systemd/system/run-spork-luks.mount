@@ -5,5 +5,5 @@ BindsTo=dev-mapper-luks\x2dlukshdrs.device
 After=dev-mapper-luks\x2dlukshdrs.device
 
 [Mount]
-What=/dev/mapper/lukshdrs
+What=/dev/mapper/luks-lukshdrs
 LazyUnmount=yes

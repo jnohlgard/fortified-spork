@@ -12,8 +12,8 @@ After=initrd-totp-generate@user.service
 Before=initrd-auth.target
 Before=shutdown.target initrd-switch-root.target
 Conflicts=shutdown.target initrd-switch-root.target
-JobTimeoutSec=infinite
-JobRunningTimeoutSec=infinite
+JobTimeoutSec=infinity
+JobRunningTimeoutSec=infinity
 
 [Service]
 Type=oneshot

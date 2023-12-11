@@ -5,6 +5,7 @@ DefaultDependencies=no
 Requires=dev-disk-by\x2d%j-%i.device
 After=dev-disk-by\x2d%j-%i.device
 After=initrd-auth.target
+Wants=cryptsetup-pre.target
 After=cryptsetup-pre.target
 Before=systemd-cryptsetup-detached-by-%j@%i.service
 Before=blockdev@dev-mapper-luks\x2d%i.target
@@ -13,14 +14,17 @@ Before=initrd-root-device.target
 Before=initrd-usr-fs.target initrd-root-fs.target
 Before=shutdown.target initrd-switch-root.target
 Conflicts=shutdown.target initrd-switch-root.target
+Before=dev-mapper-luks\x2d%i.device blockdev@dev-mapper-luks\x2d%i.target
 ConditionVirtualization=!container
 RequiresMountsFor=%t/spork/luks
 ConditionPathExists=!%t/spork/luks/%I.luks
+OnSuccess=systemd-cryptsetup-detached-by-%j@%i.service
 
 [Service]
 Type=oneshot
 StandardOutput=journal+console
-RemainAfterExit=yes
+SyslogIdentifier=luks-format-detached-%I
+#RemainAfterExit=yes
 # The luksFormat script supports some environment variables:
 #Environment="LUKSFORMAT_CIPHER="
 #Environment="LUKSFORMAT_CIPHER_KEYSIZE="
@@ -33,4 +37,4 @@ Environment="LUKSFORMAT_DETACHED_HEADER=%t/spork/luks/%I.luks"
 # Run mkfs or similar tool on the disk after formatting:
 #Environment="LUKSFORMAT_MKFS="
 ExecCondition=/usr/bin/udevadm lock -d '/dev/disk/by-%J/%I' /usr/libexec/is-disk-blank '/dev/disk/by-%J/%I'
-ExecStart=/usr/libexec/luks-format '%I'
+ExecStart=/usr/libexec/luks-format '/dev/disk/by-%J/%I'

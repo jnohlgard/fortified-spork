@@ -1,9 +1,9 @@
 [Unit]
 Description=Mount %f
-After=blockdev@dev-mapper-sysimages.target
-BindsTo=dev-mapper-sysimages.device
-After=dev-mapper-sysimages.device
+After=blockdev@dev-mapper-%j.target
+BindsTo=dev-mapper-%j.device
+After=dev-mapper-%j.device
 
 [Mount]
-What=/dev/mapper/sysimages
+What=/dev/mapper/%J
 Type=xfs

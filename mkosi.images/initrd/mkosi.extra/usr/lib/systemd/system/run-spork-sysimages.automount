@@ -1,5 +1,5 @@
 [Unit]
-Description=sysimages
-After=blockdev@dev-mapper-sysimages.target
-BindsTo=dev-mapper-sysimages.device
-After=dev-mapper-sysimages.device
+Description=Automount %f
+After=blockdev@dev-mapper-%j.target
+BindsTo=dev-mapper-%j.device
+After=dev-mapper-%j.device

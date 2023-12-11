@@ -4,10 +4,11 @@ DefaultDependencies=no
 Wants=cryptsetup.target
 After=cryptsetup.target
 After=initrd-init-disks.target
+Before=initrd-install-sys.target
 Before=initrd-root-device.target initrd-fs.target
 Before=shutdown.target initrd-switch-root.target
 Conflicts=shutdown.target initrd-switch-root.target
-ConditionDirectoryNotEmpty=!/dev/vg-sys/
+#ConditionDirectoryNotEmpty=!/dev/vg-sys/
 RequiresMountsFor=%t/spork/sysimages
 
 [Service]
