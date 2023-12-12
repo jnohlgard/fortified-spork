@@ -13,10 +13,12 @@ Conflicts=shutdown.target initrd-switch-root.target
 Type=oneshot
 StandardOutput=journal+console
 StandardError=inherit
+SyslogIdentifier=cryptsetup-rotate-keys-%I
 TimeoutSec=infinity
 Environment="EXTRA_REENCRYPT_ARGS="
 ExecStartPre=cryptsetup isLuks '%f'
 ExecStartPre=echo 'Rotating volume encryption key on %f. This may take some time...'
+ExecStartPre=-flock -x --verbose /dev/security/fido true
 ExecStart=udevadm lock -d '%f' sh -c "echo | cryptsetup reencrypt --progress-frequency=2 ${EXTRA_REENCRYPT_ARGS} '%f'"
 
 [Install]

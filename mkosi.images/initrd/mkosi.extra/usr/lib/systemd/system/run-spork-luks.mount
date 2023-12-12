@@ -6,4 +6,5 @@ After=dev-mapper-luks\x2dlukshdrs.device
 
 [Mount]
 What=/dev/mapper/luks-lukshdrs
+DirectoryMode=0700
 LazyUnmount=yes

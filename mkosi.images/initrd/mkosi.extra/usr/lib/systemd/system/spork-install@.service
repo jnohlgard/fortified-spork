@@ -1,5 +1,5 @@
 [Unit]
-Description=Create vg-sys volumes
+Description=Copy images to VG %I
 DefaultDependencies=no
 Wants=cryptsetup.target
 After=cryptsetup.target
@@ -8,14 +8,15 @@ Before=initrd-install-sys.target
 Before=initrd-root-device.target initrd-fs.target
 Before=shutdown.target initrd-switch-root.target
 Conflicts=shutdown.target initrd-switch-root.target
-#ConditionDirectoryNotEmpty=!/dev/vg-sys/
+#ConditionDirectoryNotEmpty=!/dev/%I/
 RequiresMountsFor=%t/spork/sysimages
 
 [Service]
 Type=oneshot
 StandardOutput=journal+console
 StandardError=inherit
-ExecStart=/usr/libexec/spork-install
+ExecStartPre=sh -c "printf '================ spork-install %I %t/spork/sysimages %M %A\n'"
+ExecStart=/usr/libexec/spork-install '%I' '%t/spork/sysimages' '%M' '%A'
 
 [Install]
 WantedBy=initrd-install-sys.target

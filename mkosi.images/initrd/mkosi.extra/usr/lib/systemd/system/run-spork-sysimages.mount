@@ -1,9 +1,10 @@
 [Unit]
 Description=Mount %f
-After=blockdev@dev-mapper-%j.target
-BindsTo=dev-mapper-%j.device
-After=dev-mapper-%j.device
+After=blockdev@dev-mapper-luks\x2d%j.target
+BindsTo=dev-mapper-luks\x2d%j.device
+After=dev-mapper-luks\x2d%j.device
 
 [Mount]
-What=/dev/mapper/%J
+What=/dev/mapper/luks-%J
+DirectoryMode=0700
 Type=xfs

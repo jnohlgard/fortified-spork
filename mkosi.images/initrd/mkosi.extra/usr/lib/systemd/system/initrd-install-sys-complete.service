@@ -1,0 +1,15 @@
+[Unit]
+Description=Done installing system images
+DefaultDependencies=no
+After=initrd-install-sys.target
+Before=shutdown.target initrd-switch-root.target
+Conflicts=shutdown.target initrd-switch-root.target
+OnSuccess=default.target
+OnSuccessJobMode=replace
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+StandardOutput=journal+console
+StandardError=inherit
+ExecStart=sh -c "printf 'Done installing system images\n'"

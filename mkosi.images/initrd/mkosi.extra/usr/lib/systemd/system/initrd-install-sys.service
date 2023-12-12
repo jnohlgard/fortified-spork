@@ -1,0 +1,21 @@
+[Unit]
+Description=Prepare for installing system images
+DefaultDependencies=no
+Wants=initrd-init-disks.target
+After=initrd-init-disks.target
+Wants=initrd-install-sys.target
+Before=initrd-install-sys.target
+Wants=spork-install@vg\x2dsys.service
+Before=spork-install@vg\x2dsys.service
+Before=shutdown.target initrd-switch-root.target
+Conflicts=shutdown.target initrd-switch-root.target
+OnSuccess=initrd-install-sys.target
+OnSuccessJobMode=replace
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+StandardOutput=journal+console
+StandardError=inherit
+ExecStartPre=-systemctl reset-failed
+ExecStart=sh -c "printf 'Starting installation of sysimages\n'"

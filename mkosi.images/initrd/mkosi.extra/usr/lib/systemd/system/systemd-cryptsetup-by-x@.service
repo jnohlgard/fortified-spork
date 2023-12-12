@@ -4,7 +4,6 @@ Documentation=man:crypttab(5) man:systemd-cryptsetup-generator(8) man:systemd-cr
 
 DefaultDependencies=no
 After=cryptsetup-pre.target systemd-udevd-kernel.socket
-After=initrd-format-disk@%i.target
 After=systemd-random-seed.service
 Wants=blockdev@dev-mapper-luks\x2d%i.target
 Before=blockdev@dev-mapper-luks\x2d%i.target

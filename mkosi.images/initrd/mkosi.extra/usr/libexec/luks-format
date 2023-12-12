@@ -165,7 +165,10 @@ cryptsetup luksFormat \
   ${start_offset_blocks:+--offset "${start_offset_blocks}"} \
   "${blkdev}"
 
-tmp_mapping="tmp-luksformat-${blkdev##*/}-${RANDOM}"
+tmp_mapping="luks-${blkdev##*/}"
+if [ -e "/dev/mapper/${tmp_mapping}" ]; then
+  tmp_mapping="tmp-luks-format-${blkdev##*/}-${RANDOM}"
+fi
 printf 'Activating dm-crypt mapping %s\n' "${tmp_mapping}"
 cryptsetup open --type luks2 \
   ${LUKSFORMAT_DETACHED_HEADER:+--header "${LUKSFORMAT_DETACHED_HEADER}"} \

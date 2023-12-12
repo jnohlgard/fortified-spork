@@ -6,9 +6,12 @@ After=systemd-udevd-kernel.socket
 Before=wait-for-yubikey.target
 Before=shutdown.target initrd-switch-root.target
 Conflicts=shutdown.target initrd-switch-root.target
+OnSuccess=default.target
+#OnSuccessJobMode=isolate
 
 [Service]
 Type=oneshot
 TimeoutStartSec=infinity
 ExecStart=/usr/libexec/wait-for-yubikey /dev/security/fido
+ExecStartPost=-systemctl reset-failed
 StandardOutput=journal+console
