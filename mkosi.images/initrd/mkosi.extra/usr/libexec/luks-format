@@ -149,7 +149,7 @@ set -x
 # need to specify --luks2-keyslots-size to avoid having a multi-GB header file
 # when the data device offset is large.
 # the temporary key above has high entropy so using a quicker PBKDF method should be fine here.
-cryptsetup luksFormat \
+flock -x --verbose "$0" cryptsetup luksFormat \
   --batch-mode \
   --type luks2 \
   ${LUKSFORMAT_DETACHED_HEADER:+--header "${LUKSFORMAT_DETACHED_HEADER}"} \
@@ -170,7 +170,7 @@ if [ -e "/dev/mapper/${tmp_mapping}" ]; then
   tmp_mapping="tmp-luks-format-${blkdev##*/}-${RANDOM}"
 fi
 printf 'Activating dm-crypt mapping %s\n' "${tmp_mapping}"
-cryptsetup open --type luks2 \
+flock -x --verbose "$0" cryptsetup open --type luks2 \
   ${LUKSFORMAT_DETACHED_HEADER:+--header "${LUKSFORMAT_DETACHED_HEADER}"} \
   --key-file "${keyfile_tmp}" \
   "${blkdev}" \
@@ -212,7 +212,7 @@ fi
 enroll_dev="${LUKSFORMAT_DETACHED_HEADER:-${blkdev}}"
 if [ -n "${LUKSFORMAT_TPM2_DEVICE:-}" ]; then
   printf 'Binding encryption to TPM2 device %s and PCRs %s\n' "${LUKSFORMAT_TPM2_DEVICE}" "${LUKSFORMAT_TPM2_PCRS}"
-  systemd-cryptenroll --unlock-key-file="${keyfile_tmp}" \
+  flock -x --verbose "$0" systemd-cryptenroll --unlock-key-file="${keyfile_tmp}" \
     --tpm2-device="${LUKSFORMAT_TPM2_DEVICE}" \
     --tpm2-pcrs="${LUKSFORMAT_TPM2_PCRS}" \
     "${enroll_dev}"
@@ -222,7 +222,7 @@ printf 'Adding FIDO2 as an unlock method and wiping temporary key\n'
 # Trying to work around a race on the FIDO2 device
 flock -x --verbose /dev/security/fido true
 retries=0
-until systemd-cryptenroll --unlock-key-file="${keyfile_tmp}" \
+until flock -x --verbose "$0" systemd-cryptenroll --unlock-key-file="${keyfile_tmp}" \
   --wipe-slot=password \
   --fido2-device="${LUKSFORMAT_FIDO2_DEVICE}" \
   "${enroll_dev}"; do
