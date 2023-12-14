@@ -6,6 +6,10 @@ if [ $# -ne 2 ]; then
   exit 2
 fi
 
+# Ensure only a single instance is running at a time. This avoids user
+# confusion when generating two or more keys at boot.
+[ "${FLOCKER}" != "$0" ] && exec env FLOCKER="$0" flock -x "$0" "$0" "$@" || :
+
 keyid="$1"; shift
 outdir="$1"; shift
 keysize=20
@@ -30,13 +34,52 @@ systemd-creds encrypt \
   --with-key=tpm2 \
   --name="${keyid}" \
   --tpm2-pcrs=0+4+7+14 \
-  - "${outdir}/${keyid}" <<EOF
-${new_key}
-EOF
+  - "${outdir}/${keyid}" <<-EOF
+	${new_key}
+	EOF
 
+algorithm=sha256
+interval=30
+digits=8
+window=2
+now_offset="now -$((window * interval / 2)) sec"
+sd_ask_pass_id="${0##*/}:${keyid}"
+
+verify_totp() {
+  oathtool --totp="${algorithm}" \
+    --time-step-size="${interval}" \
+    --digits="${digits}" \
+    --now="${now_offset}" \
+    --window="${window}" \
+    --base32 \
+    "@/proc/self/fd/3" \
+    - >/dev/null 2>/dev/null 3<<-EOF
+	${new_key}
+	EOF
+}
+
+while true; do
+  printf 'TOTP parameters:\n'
+  printf '  Algorithm: %s\n' "${algorithm}"
+  printf '  Interval: %s\n' "${interval}"
+  printf '  Digits: %s\n' "${digits}"
+  cat <<-EOF
+	TOTP key <<${keyid}>>
+	  -<([  ${new_key}  ])>-
+	EOF
+
+  if systemd-ask-password \
+    --id="${sd_ask_pass_id}" \
+    --icon=dialog-password \
+    --timeout="${interval}" \
+    --echo=yes \
+    "Enter TOTP code to confirm:" \
+    | verify_totp; then
+    printf 'Code OK!\n'
+    break
+  fi
+  >&2 printf 'Wrong user TOTP code.\n'
+  printf 'Try again.\n'
+done
+printf 'Copying newly generated code to ESP loader credentials dir\n'
 cp -v "${outdir}/${keyid}" "${loadercredsdir}/${keyid}.cred"
-
-cat <<EOF
-New TOTP key <<${keyid}>>
-  -<([  ${new_key}  ])>-
-EOF
