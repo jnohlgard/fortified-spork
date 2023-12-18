@@ -4,6 +4,7 @@ DefaultDependencies=no
 Wants=cryptsetup.target
 After=cryptsetup.target
 After=initrd-init-disks.target
+After=vgcreate@%i.service
 Before=initrd-install-sys.target
 Before=initrd-root-device.target initrd-fs.target
 Before=shutdown.target initrd-switch-root.target
@@ -15,8 +16,8 @@ RequiresMountsFor=%t/spork/sysimages
 Type=oneshot
 StandardOutput=journal+console
 StandardError=inherit
-ExecStartPre=sh -c "printf '================ spork-install %I %t/spork/sysimages %M %A\n'"
-ExecStart=/usr/libexec/spork-install '%I' '%t/spork/sysimages' '%M' '%A'
+ExecStartPre=printf '================ copy-sys-images "%%s" "%%s" "%%s" "%%s"\n' '%I' '%t/spork/sysimages' '%M' '%A'
+ExecStart=/usr/libexec/copy-sys-images '%I' '%t/spork/sysimages' '%M' '%A'
 
 [Install]
 WantedBy=initrd-install-sys.target

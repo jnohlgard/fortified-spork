@@ -8,7 +8,7 @@ fi
 
 # Ensure only a single instance is running at a time. This avoids user
 # confusion when generating two or more keys at boot.
-[ "${FLOCKER}" != "$0" ] && exec env FLOCKER="$0" flock -x "$0" "$0" "$@" || :
+[ "${FLOCKER-}" != "$0" ] && exec env FLOCKER="$0" flock -x "$0" "$0" "$@" || :
 
 keyid="$1"; shift
 outdir="$1"; shift

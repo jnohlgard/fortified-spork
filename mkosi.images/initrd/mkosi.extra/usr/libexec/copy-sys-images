@@ -1,0 +1,166 @@
+#!/usr/bin/sh
+set -eu
+
+die() {
+  if [ $# -gt 0 ]; then
+    >&2 printf "$@"
+  fi
+  exit 1
+}
+
+usage() {
+  printf 'Usage: %s [target_vg] [install_from] [image_id] [image_version]\n' "${0##*/}"
+  printf 'Install the system to the given LVM volume group (default: "vg-sys")\n'
+}
+
+if [ $# -gt 4 ]; then
+  usage >&2
+  exit 2
+fi
+
+if [ $# -gt 0 ] && [ "$1" = '--help' ]; then
+  usage
+  exit 0
+fi
+
+source /etc/os-release
+# Same format as the systemd-sysupdate architecture
+arch="$(uname -m | tr '_' '-')"
+
+target_vg='vg-sys'
+install_from='/run/spork/sysimages'
+image_id="${IMAGE_ID-}"
+image_version="${IMAGE_VERSION-}"
+
+if [ $# -gt 0 ]; then
+  target_vg="$1"; shift
+fi
+if [ $# -gt 0 ]; then
+  install_from="$1"; shift
+fi
+if [ $# -gt 0 ]; then
+  image_id="$1"; shift
+fi
+if [ $# -gt 0 ]; then
+  image_version="$1"; shift
+fi
+
+[ -n "${image_id}" ] || die 'Missing image_id\n'
+[ -n "${image_version}" ] || die 'Missing image_version\n'
+[ -d "${install_from}" ] || die 'Not a directory: %s\n' "${install_from}"
+
+lv_size_aligned_from_image_file_size() {
+  [ $# -eq 1 ] || die 'Usage: lv_size_aligned_from_image_file_size <image_file>\n'
+  local file_source="$1"
+  local file_size_b="$(stat -L -c %s "${file_source}")"
+  local file_size_mib_ceil="$(((file_size_b + 1024 * 1024 - 1) / 1024 / 1024))"
+  local lv_size_aligned_mib="$((((file_size_mib + 3) / 4) * 4))"
+  printf '%u' "${lv_size_aligned_mib}"
+}
+
+lv_from_image() {
+  [ $# -eq 2 ] || die 'Usage: lv_from_image <lv_name> <image_source>\n'
+
+  lv_name="$1";shift
+  image_source="$1";shift
+
+}
+
+printf 'Installation source dir: %s\n' "${install_from}"
+ls -l "${install_from}"
+printf '\n'
+printf 'Install version: %s\n' "${image_version}"
+
+printf 'Checking if VG %s exists\n' "${target_vg}"
+vgdisplay "${target_vg}" || die 'Create the target VG %s first\n' "${target_vg}"
+printf 'Found %s\n' "${target_vg}"
+lvs "${target_vg}" || true
+
+printf 'Checking for /etc overlay backing volume\n'
+if ! lvdisplay "${target_vg}/overlay-etc"; then
+  lvcreate -v -ay \
+    -L 500M \
+    -n 'overlay-etc' \
+    "${target_vg}"
+  mkfs.xfs -m rmapbt=1 -L 'overlay-etc' "/dev/${target_vg}/overlay-etc"
+fi
+
+printf 'Creating LVs and copying blocks and files\n'
+image_prefix="${image_id}_${image_version}"
+for image_type in root usr; do
+  image_source="${install_from}/${image_prefix}.${image_type}.raw"
+  [ -f "${image_source}" ] || continue
+  lv_name="${image_prefix}_${image_type}"
+
+  if lvdisplay "${target_vg}/${lv_name}" 2>/dev/null; then
+    printf 'LV %s already exists! Skipping\n' "${target_vg}/${lv_name}"
+    continue
+  fi
+
+  # LV size in MiB, rounded up to nearest 4 MiB boundary
+  lv_size_mib="$(lv_size_aligned_from_image_file_size "${image_source}")"
+
+  verity_source="${image_source%.raw}-verity.raw"
+  if [ -e "${verity_source}" ]; then
+    printf 'Found dm-verity image for %s: %s\n' "${image_source##*/}" "${verity_source}"
+    verity_size_mib="$(lv_size_aligned_from_image_file_size "${verity_source}")"
+    verity_sig_file="${verity_source%.raw}-sig.raw"
+    printf 'Creating verity volume %s\n' "${lv_name}-verity"
+    if lvdisplay -s "${target_vg}/${lv_name}-verity" 2>/dev/null; then
+      lvremove -y -v "${target_vg}/${lv_name}-verity"
+    fi
+    lvcreate -v -y \
+      --addtag "image_type:${image_type}-verity" \
+      --addtag "image_id:${image_id}" \
+      --addtag "image_version:${image_version}" \
+      -L "${verity_size_mib}M" \
+      -n "${lv_name}-verity" \
+      "${target_vg}"
+    printf 'Copying verity hash data...\n'
+    dd status=progress bs=4M if="${verity_source}" of="/dev/${target_vg}/${lv_name}-verity"
+    # change permission to readonly
+    lvchange -p r "${target_vg}/${lv_name}"
+
+    if [ -e "${verity_sig_file}" ]; then
+      printf 'Found signed verity roothash %s\n' "${verity_sig_file}"
+      printf 'Creating verity signature volume %s\n' "${lv_name}-verity-sig"
+      if lvdisplay -s "${target_vg}/${lv_name}-verity-sig" 2>/dev/null; then
+        lvremove -y -v "${target_vg}/${lv_name}-verity-sig"
+      fi
+      lvcreate -v -y \
+        --addtag "image_type:${image_type}-verity-sig" \
+        --addtag "image_id:${image_id}" \
+        --addtag "image_version:${image_version}" \
+        -L "1M" \
+        -n "${lv_name}-verity-sig" \
+        "${target_vg}"
+      dd status=progress bs=1M \
+        if=/dev/zero \
+        of="/dev/${target_vg}/${lv_name}-verity-sig"
+      dd status=progress bs=1M \
+        if="${verity_sig_file}" \
+        of="/dev/${target_vg}/${lv_name}-verity-sig"
+      # change permission to readonly
+      lvchange -p r "${target_vg}/${lv_name}"
+    fi
+  fi
+
+  printf 'Installing %s to LV %s...\n' "${image_source}" "${target_vg}/${lv_name}"
+  lvcreate -v -y \
+    --addtag "image_type:${image_type}" \
+    --addtag "image_id:${image_id}" \
+    --addtag "image_version:${image_version}" \
+    --addtag "boot-status:indeterminate" \
+    --addtag "boot-tries:3" \
+    -L "${lv_size_mib}M" \
+    -n "${lv_name}" \
+    "${target_vg}"
+  dd status=progress bs=4M \
+    if="${image_source}" \
+    of="/dev/${target_vg}/${lv_name}"
+done
+
+printf 'VG %s is ready\n' "${target_vg}"
+
+vgdisplay "${target_vg}"
+lvs "${target_vg}"

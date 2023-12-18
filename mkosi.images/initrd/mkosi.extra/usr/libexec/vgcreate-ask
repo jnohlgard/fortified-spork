@@ -1,0 +1,82 @@
+#!/usr/bin/sh
+set -eu
+
+die() {
+  if [ $# -gt 0 ]; then
+    >&2 printf "$@"
+  fi
+  exit 1
+}
+
+usage() {
+  printf 'Usage: %s <vg_name>\n' "${0##*/}"
+  printf 'Create the given LVM volume group\n'
+}
+
+if [ $# -ne 1 ]; then
+  usage >&2
+  exit 2
+fi
+
+if [ "$1" = '--help' ]; then
+  usage
+  exit 0
+fi
+
+target_vg="$1"; shift
+[ $# -eq 0 ] || die 'BUG: not expecting any more arguments: %s\n' "$@"
+
+printf 'These are the PVs in the system:\n'
+pvs -o '+pv_tags'
+
+printf 'lsblk output:\n'
+lsblk -o '+FSTYPE,LABEL'
+
+set --
+
+while [ $# -eq 0 ]; do
+  # Refresh the PV list inside the loop to detect if any devices appear later
+  # if a user gives a bad input
+  pvs_found="$(pvs -o pv_name,pv_uuid,pv_size -S 'pv_in_use != used')"
+  printf 'Select PVs to use for VG %s (showing unused PVs only), space-separated list:\n' "${target_vg}"
+  printf '%s\n' "${pvs_found}" | nl -bp'/dev/' -w3 -s' '
+
+  selected_pvs="$(systemd-ask-password --icon drive-harddisk -e 'Enter PV number(s) or device node(s), e.g. "/dev/sda1" (space-separated list)')"
+  for pv in ${selected_pvs}; do
+    dev=
+    case "${pv}" in
+      /dev/*)
+        if [ -b "${pv}" ]; then
+          # Block device node
+          dev="${pv}"
+        fi
+        ;;
+      *[0-9]*)
+        if printf '%u' "${pv}" >/dev/null; then
+          # Valid number, pick a line in the list
+          line_num="$(printf '%u' "${pv}")"
+          dev="$(printf '%s\n' "${pvs_found}" | awk "FNR==\"$((line_num + 1))\" { print \$1 }")"
+          # NB: dev will be empty if the line number is not within the range of lines in pvs_found
+        fi
+        ;;
+    esac
+    if [ -z "${dev}" ] && [ -b "${dev}" ]; then
+      set -- "$@" "${dev}"
+    else
+      >&2 printf 'Bad input "%s"\n' "${pv}"
+      >&2 ls -laZd "${dev}" || true
+      >&2 printf 'Try again.\n'
+      set --
+      break
+    fi
+  done
+done
+
+vgcreate -v \
+  --pvmetadatacopies 2 \
+  --vgmetadatacopies all \
+  --setautoactivation y \
+  "${target_vg}" \
+  "$@"
+
+vgdisplay "${target_vg}"

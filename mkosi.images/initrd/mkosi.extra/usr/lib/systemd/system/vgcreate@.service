@@ -1,0 +1,22 @@
+[Unit]
+Description=Create VG %I
+DefaultDependencies=no
+Wants=cryptsetup.target
+After=cryptsetup.target
+After=systemd-ask-password-console.path
+After=systemd-ask-password-plymouth.path
+After=initrd-init-disks.target
+Before=initrd-install-sys.target
+Before=initrd-root-device.target initrd-fs.target
+Before=shutdown.target initrd-switch-root.target
+Conflicts=shutdown.target initrd-switch-root.target
+
+[Service]
+Type=oneshot
+StandardOutput=journal+console
+StandardError=inherit
+ExecCondition=sh -c "! vgdisplay -s '%I'"
+ExecStart=/usr/libexec/vgcreate-ask '%I'
+
+[Install]
+WantedBy=initrd-install-sys.target

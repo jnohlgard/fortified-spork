@@ -18,6 +18,7 @@ After=dev-disk-by\x2d%j-%i.device
 Type=oneshot
 RemainAfterExit=yes
 TimeoutSec=infinity
+SyslogIdentifier=systemd-cryptsetup-detached@%I
 KeyringMode=shared
 OOMScoreAdjust=500
 Environment="CRYPTSETUP_OPTIONS=luks,fido2-device=auto,tpm2-device=auto"

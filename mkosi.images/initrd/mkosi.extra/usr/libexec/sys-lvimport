@@ -9,7 +9,7 @@ die() {
 }
 
 usage() {
-  printf 'Usage: %s [target_vg] [install_from] [image_id] [image_version]\n' "${0##*/}"
+  printf 'Usage: %s <lv_name> [image_source]\n' "${0##*/}"
   printf 'Install the system to the given LVM volume group (default: "vg-sys")\n'
 }
 
