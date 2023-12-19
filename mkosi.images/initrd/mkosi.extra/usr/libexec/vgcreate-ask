@@ -60,7 +60,7 @@ while [ $# -eq 0 ]; do
         fi
         ;;
     esac
-    if [ -z "${dev}" ] && [ -b "${dev}" ]; then
+    if [ -n "${dev}" ] && [ -b "${dev}" ]; then
       set -- "$@" "${dev}"
     else
       >&2 printf 'Bad input "%s"\n' "${pv}"

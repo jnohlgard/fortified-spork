@@ -1,11 +1,11 @@
 [Unit]
 Description=/etc upper backing store
 Before=initrd-fs.target
-Requires=systemd-fsck@dev-vg\x2dsys-etc.service
-After=systemd-fsck@dev-vg\x2dsys-etc.service
-After=blockdev@dev-vg\x2dsys-etc.target
+Requires=systemd-fsck@dev-vg\x2dsys-overlay\x2detc.service
+After=systemd-fsck@dev-vg\x2dsys-overlay\x2detc.service
+After=blockdev@dev-vg\x2dsys-overlay\x2detc.target
 
 [Mount]
-What=/dev/vg-sys/etc
+What=/dev/vg-sys/overlay-etc
 # NB: Mounting read-only by default, but it is overridable by root using mount -o remount,rw
 Options=ro,nosuid,nodev

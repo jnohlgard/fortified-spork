@@ -18,6 +18,7 @@ ConditionDirectoryNotEmpty=/usr/lib/repart-empty.d
 [Service]
 Type=oneshot
 StandardOutput=journal+console
+SyslogIdentifier=%p@%f
 RemainAfterExit=yes
 ExecCondition=/usr/bin/udevadm lock -d '%f' /usr/libexec/is-disk-blank '%f'
 ExecStart=/usr/bin/systemd-repart --definitions=/usr/lib/repart-empty.d --empty=require --dry-run=no '%f'

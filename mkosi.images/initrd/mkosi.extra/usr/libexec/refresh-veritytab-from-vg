@@ -1,0 +1,63 @@
+#!/usr/bin/sh
+set -eu
+
+die() {
+  if [ $# -gt 0 ]; then
+    >&2 printf "$@"
+  fi
+  exit 1
+}
+
+usage() {
+  printf 'Usage: %s [target_vg]\n' "${0##*/}"
+  printf 'Update /etc/veritytab based on the LVs in the given LVM volume group (default: "vg-sys")\n'
+}
+
+if [ $# -gt 1 ]; then
+  usage >&2
+  exit 2
+fi
+
+if [ $# -gt 0 ] && [ "$1" = '--help' ]; then
+  usage
+  exit 0
+fi
+
+source /etc/os-release
+# Same format as the systemd-sysupdate architecture
+arch="$(uname -m | tr '_' '-')"
+
+target_vg='vg-sys'
+image_id="${IMAGE_ID-}"
+image_version="${IMAGE_VERSION-}"
+
+if [ $# -gt 0 ]; then
+  target_vg="$1"; shift
+fi
+
+[ -n "${image_id}" ] || die 'Missing IMAGE_ID in /etc/os-release\n'
+[ -n "${image_version}" ] || die 'Missing IMAGE_VERSION in /etc/os-release\n'
+
+printf 'Image version: %s\n' "${image_version}"
+
+printf 'Checking if VG %s exists\n' "${target_vg}"
+vgdisplay -s "${target_vg}" || die 'Create the target VG %s first\n' "${target_vg}"
+lvs "${target_vg}" || true
+
+image_prefix="${image_id}_${image_version}"
+for image_type in root usr; do
+  lv_name="${image_prefix}_${image_type}-${arch}"
+  verity_sig_path="/dev/${target_vg}/${lv_name}-verity-sig"
+  [ -e "${verity_sig_path}" ] || continue
+  verity_roothash="$(jq -j .rootHash < "${verity_sig_path}")" || continue
+  verity_sig="$(jq -j .signature < "${verity_sig_path}")" || continue
+
+  if [ -n "${verity_roothash}" ]; then
+    sed -i \
+      -e "/^${image_type} /d" \
+      -e "\$a ${image_type} /dev/${target_vg}/${lv_name} /dev/${target_vg}/${lv_name}-verity ${verity_roothash} root-hash-signature=base64:${verity_sig}" \
+      /etc/veritytab
+    printf 'Added %s to /etc/veritytab\n' "${target_vg}/${lv_name}"
+    systemctl add-wants --runtime "dev-mapper-${image_type}.device" "systemd-veritysetup@${image_type}.service"
+  fi
+done

@@ -13,4 +13,5 @@ Type=oneshot
 RemainAfterExit=yes
 StandardOutput=journal+console
 StandardError=inherit
+SyslogIdentifier=%N
 ExecStart=sh -c "printf 'Begin boot-time user authentication\n'"

@@ -54,16 +54,8 @@ lv_size_aligned_from_image_file_size() {
   local file_source="$1"
   local file_size_b="$(stat -L -c %s "${file_source}")"
   local file_size_mib_ceil="$(((file_size_b + 1024 * 1024 - 1) / 1024 / 1024))"
-  local lv_size_aligned_mib="$((((file_size_mib + 3) / 4) * 4))"
-  printf '%u' "${lv_size_aligned_mib}"
-}
-
-lv_from_image() {
-  [ $# -eq 2 ] || die 'Usage: lv_from_image <lv_name> <image_source>\n'
-
-  lv_name="$1";shift
-  image_source="$1";shift
-
+  local lv_size_aligned_mib_ceil="$((((file_size_mib_ceil + 3) / 4) * 4))"
+  printf '%u' "${lv_size_aligned_mib_ceil}"
 }
 
 printf 'Installation source dir: %s\n' "${install_from}"
@@ -77,7 +69,7 @@ printf 'Found %s\n' "${target_vg}"
 lvs "${target_vg}" || true
 
 printf 'Checking for /etc overlay backing volume\n'
-if ! lvdisplay "${target_vg}/overlay-etc"; then
+if ! lvdisplay --column "${target_vg}/overlay-etc"; then
   lvcreate -v -ay \
     -L 500M \
     -n 'overlay-etc' \
@@ -86,13 +78,15 @@ if ! lvdisplay "${target_vg}/overlay-etc"; then
 fi
 
 printf 'Creating LVs and copying blocks and files\n'
+find "${install_from}"
 image_prefix="${image_id}_${image_version}"
 for image_type in root usr; do
-  image_source="${install_from}/${image_prefix}.${image_type}.raw"
+  image_source="${install_from}/${image_prefix}/${image_type}-${arch}.raw"
+  ls -l "${image_source}" || true
   [ -f "${image_source}" ] || continue
-  lv_name="${image_prefix}_${image_type}"
+  lv_name="${image_prefix}_${image_type}-${arch}"
 
-  if lvdisplay "${target_vg}/${lv_name}" 2>/dev/null; then
+  if lvdisplay --column "${target_vg}/${lv_name}" 2>/dev/null; then
     printf 'LV %s already exists! Skipping\n' "${target_vg}/${lv_name}"
     continue
   fi
@@ -100,13 +94,14 @@ for image_type in root usr; do
   # LV size in MiB, rounded up to nearest 4 MiB boundary
   lv_size_mib="$(lv_size_aligned_from_image_file_size "${image_source}")"
 
+  verity_roothash=
   verity_source="${image_source%.raw}-verity.raw"
   if [ -e "${verity_source}" ]; then
     printf 'Found dm-verity image for %s: %s\n' "${image_source##*/}" "${verity_source}"
     verity_size_mib="$(lv_size_aligned_from_image_file_size "${verity_source}")"
     verity_sig_file="${verity_source%.raw}-sig.raw"
     printf 'Creating verity volume %s\n' "${lv_name}-verity"
-    if lvdisplay -s "${target_vg}/${lv_name}-verity" 2>/dev/null; then
+    if lvdisplay --column "${target_vg}/${lv_name}-verity" 2>/dev/null; then
       lvremove -y -v "${target_vg}/${lv_name}-verity"
     fi
     lvcreate -v -y \
@@ -117,14 +112,16 @@ for image_type in root usr; do
       -n "${lv_name}-verity" \
       "${target_vg}"
     printf 'Copying verity hash data...\n'
-    dd status=progress bs=4M if="${verity_source}" of="/dev/${target_vg}/${lv_name}-verity"
+    udevadm lock -d "/dev/${target_vg}/${lv_name}-verity" \
+      dd status=progress bs=4M conv=fsync oflag=direct \
+        if="${verity_source}" of="/dev/${target_vg}/${lv_name}-verity"
     # change permission to readonly
-    lvchange -p r "${target_vg}/${lv_name}"
+    lvchange -p r "${target_vg}/${lv_name}-verity" || true
 
     if [ -e "${verity_sig_file}" ]; then
       printf 'Found signed verity roothash %s\n' "${verity_sig_file}"
       printf 'Creating verity signature volume %s\n' "${lv_name}-verity-sig"
-      if lvdisplay -s "${target_vg}/${lv_name}-verity-sig" 2>/dev/null; then
+      if lvdisplay --column "${target_vg}/${lv_name}-verity-sig" 2>/dev/null; then
         lvremove -y -v "${target_vg}/${lv_name}-verity-sig"
       fi
       lvcreate -v -y \
@@ -134,14 +131,18 @@ for image_type in root usr; do
         -L "1M" \
         -n "${lv_name}-verity-sig" \
         "${target_vg}"
-      dd status=progress bs=1M \
-        if=/dev/zero \
-        of="/dev/${target_vg}/${lv_name}-verity-sig"
-      dd status=progress bs=1M \
-        if="${verity_sig_file}" \
-        of="/dev/${target_vg}/${lv_name}-verity-sig"
+      udevadm lock -d "/dev/${target_vg}/${lv_name}-verity-sig" \
+        dd status=progress bs=1M conv=fsync oflag=direct \
+          if=/dev/zero \
+          of="/dev/${target_vg}/${lv_name}-verity-sig"
+      udevadm lock -d "/dev/${target_vg}/${lv_name}-verity-sig" \
+        dd status=progress bs=1M conv=fsync oflag=direct \
+          if="${verity_sig_file}" \
+          of="/dev/${target_vg}/${lv_name}-verity-sig"
       # change permission to readonly
-      lvchange -p r "${target_vg}/${lv_name}"
+      lvchange -p r "${target_vg}/${lv_name}-verity-sig" || true
+      verity_roothash="$(jq -j .rootHash < "${verity_sig_file}")" || true
+      verity_sig="$(jq -j .signature < "${verity_sig_file}")" || true
     fi
   fi
 
@@ -152,12 +153,15 @@ for image_type in root usr; do
     --addtag "image_version:${image_version}" \
     --addtag "boot-status:indeterminate" \
     --addtag "boot-tries:3" \
+    ${verity_roothash:+--addtag "roothash:${verity_roothash}"} \
     -L "${lv_size_mib}M" \
     -n "${lv_name}" \
     "${target_vg}"
-  dd status=progress bs=4M \
-    if="${image_source}" \
-    of="/dev/${target_vg}/${lv_name}"
+  udevadm lock -d "/dev/${target_vg}/${lv_name}" \
+    dd status=progress bs=4M conv=fsync oflag=direct \
+      if="${image_source}" \
+      of="/dev/${target_vg}/${lv_name}"
+  lvchange -p r "${target_vg}/${lv_name}" || true
 done
 
 printf 'VG %s is ready\n' "${target_vg}"

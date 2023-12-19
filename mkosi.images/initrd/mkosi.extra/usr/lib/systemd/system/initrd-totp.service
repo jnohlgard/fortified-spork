@@ -25,4 +25,5 @@ ExecStart=/usr/libexec/totp-mutual "${CREDENTIALS_DIRECTORY}/initrd-totp-machine
 ExecStartPost=sh -c 'printf "\n\n==== TOTP accepted ====\n\n" &>/dev/console'
 StandardOutput=tty
 StandardError=journal+console
+SyslogIdentifier=%N
 Restart=on-failure

@@ -34,12 +34,6 @@ systemctl mask dnsmasq.service
 systemctl mask docker.socket
 
 set +x
-printf 'Injecting values in /etc/os-release\n'
-set -x
-sed -i '/^IMAGE_ID=/d;/^IMAGE_VERSION=/d' /etc/os-release
-printf '%s\n' "IMAGE_ID=${IMAGE_ID}" "IMAGE_VERSION=${IMAGE_VERSION}" >> /etc/os-release
-
-set +x
 printf 'Stashing original /etc state to /usr/share/factory/etc/\n'
 set -x
 rm -rf /usr/share/factory/etc

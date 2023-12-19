@@ -112,7 +112,6 @@ fi
 keyfile_tmp="$(mktemp -t "luks-format-temporary-keyfile-XXXXXXXX.bin")"
 dd if=/dev/urandom bs=256 count=1 of="${keyfile_tmp}" status=none
 
-set -x
 # need to specify --luks2-keyslots-size to avoid having a multi-GB header file
 # when the data device offset is large.
 # the temporary key above has high entropy so using a quicker PBKDF method should be fine here.
@@ -152,9 +151,12 @@ if [ -n "${LUKSFORMAT_DETACHED_HEADER}" ]; then
     --key-size 512 \
     "${blkdev}" \
     "${wipedev}"
-  time udevadm lock -d "/dev/mapper/${wipedev}" dd if=/dev/zero of="/dev/mapper/${wipedev}" bs=4M count="${start_offset_4m}" status=progress
+  time udevadm lock -d "/dev/mapper/${wipedev}" \
+    dd oflag=direct conv=fsync status=progress \
+      bs=4M count="${start_offset_4m}" \
+      if=/dev/zero of="/dev/mapper/${wipedev}"
 
-  if ! cryptsetup close "${wipedev}" || cryptsetup close "${wipedev}" --debug; then
+  if ! ( cryptsetup close "${wipedev}" || cryptsetup close "${wipedev}" --debug ); then
     printf 'Failed to close cryptwipe mapping %s: %s\n' "${wipedev}" "$?"
     printf 'Will retry...\n'
   fi
@@ -164,7 +166,7 @@ if [ -n "${LUKSFORMAT_DETACHED_HEADER}" ]; then
     ls -la "/dev/mapper/${wipedev}" || true
     lsof -w | grep -F -e "/dev/dm-" -e "${wipedev}" || true
     sleep 1
-    if ! cryptsetup close --debug "${wipedev}"; then
+    if cryptsetup status "${wipedev}" && ! cryptsetup close --debug "${wipedev}"; then
       printf 'Failed to close cryptwipe mapping %s: %s\n' "${wipedev}" "$?"
       printf 'Falling back to deferred close\n'
       cryptsetup close --debug --deferred "${wipedev}"
@@ -172,6 +174,10 @@ if [ -n "${LUKSFORMAT_DETACHED_HEADER}" ]; then
   fi
 fi
 
+# LVM2 is a bit tricky about changing the name of PV device nodes, at least
+# with the Fedora default configuration, so ideally we want to use the final
+# cryptsetup mapping for the initialization. Most other file systems and
+# storage engines are not as sensitive though.
 tmp_mapping="luks-${blkdev##*/}"
 if [ -e "/dev/mapper/${tmp_mapping}" ]; then
   tmp_mapping="tmp-luks-format-${blkdev##*/}-${RANDOM}"
@@ -195,11 +201,11 @@ fi
 
 if [ -n "${LUKSFORMAT_MKFS}" ]; then
   printf 'Running mkfs command: %s\n' "${LUKSFORMAT_MKFS} \"/dev/mapper/${tmp_mapping}\""
-  udevadm lock -d "/dev/mapper/${tmp_mapping}" sh -c "${LUKSFORMAT_MKFS} \"/dev/mapper/${tmp_mapping}\""
+  udevadm lock -d "/dev/mapper/${tmp_mapping}" sh -c "${LUKSFORMAT_MKFS} '/dev/mapper/${tmp_mapping}'"
 fi
 
 printf 'Deactivating dm-crypt mapping %s\n' "${tmp_mapping}"
-if ! cryptsetup close "${tmp_mapping}" || cryptsetup close "${tmp_mapping}" --debug; then
+if ! ( cryptsetup close "${tmp_mapping}" || cryptsetup close "${tmp_mapping}" --debug ); then
   printf 'Failed to close temporary dm-crypt mapping %s: %s\n' "${tmp_mapping}" "$?"
   printf 'Will retry...\n'
 fi
@@ -209,7 +215,7 @@ if cryptsetup status "${tmp_mapping}"; then
   ls -la "/dev/mapper/${tmp_mapping}" || true
   lsof -w | grep -F -e "/dev/dm-" -e "${tmp_mapping}" || true
   sleep 1
-  if ! cryptsetup close --debug "${tmp_mapping}"; then
+  if cryptsetup status "${tmp_mapping}" && ! cryptsetup close --debug "${tmp_mapping}"; then
     printf 'Failed to close cryptwipe mapping %s: %s\n' "${tmp_mapping}" "$?"
     printf 'Falling back to deferred close\n'
     cryptsetup close --debug --deferred "${tmp_mapping}"

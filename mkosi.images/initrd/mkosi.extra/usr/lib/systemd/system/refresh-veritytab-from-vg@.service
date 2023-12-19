@@ -1,0 +1,24 @@
+[Unit]
+Description=Refresh /etc/veritytab with LVs in VG %I
+DefaultDependencies=no
+Wants=cryptsetup.target
+After=cryptsetup.target
+After=initrd-init-disks.target
+After=vgcreate@%i.service
+After=copy-sys-images@%i.service
+Before=initrd-install-sys.target
+Before=initrd-root-device.target initrd-usr-device.target initrd-root-fs.target initrd-usr-fs.target initrd-fs.target
+Before=shutdown.target initrd-switch-root.target
+Conflicts=shutdown.target initrd-switch-root.target
+ConditionPathExistsGlob=/dev/%I/*-verity-sig
+
+[Service]
+Type=oneshot
+StandardOutput=journal+console
+StandardError=inherit
+ExecStartPre=touch /etc/veritytab
+ExecStart=/usr/libexec/refresh-veritytab-from-vg '%I'
+ExecStartPost=-systemctl --no-block daemon-reload
+
+[Install]
+WantedBy=initrd-fs.target

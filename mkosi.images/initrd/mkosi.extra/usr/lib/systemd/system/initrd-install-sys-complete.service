@@ -5,6 +5,9 @@ After=initrd-install-sys.target
 Before=shutdown.target initrd-switch-root.target
 Conflicts=shutdown.target initrd-switch-root.target
 OnSuccess=default.target
+OnSuccess=initrd-root-fs.target
+OnSuccess=initrd-fs.target
+OnSuccess=sysroot.mount
 OnSuccessJobMode=replace
 
 [Service]

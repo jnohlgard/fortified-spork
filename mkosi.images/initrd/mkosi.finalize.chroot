@@ -6,12 +6,6 @@ set -x
 usermod -p '' root
 
 set +x
-printf 'Injecting values in /etc/os-release\n'
-set -x
-sed -i '/^IMAGE_ID=/d;/^IMAGE_VERSION=/d' /etc/os-release
-printf '%s\n' "IMAGE_ID=${IMAGE_ID}" "IMAGE_VERSION=${IMAGE_VERSION}" >> /etc/os-release
-
-set +x
 printf 'Set systemd default target\n'
 set -x
 systemctl set-default multi-user.target
