@@ -4,6 +4,7 @@
 /mkosi.der
 /mkosi.key
 /mkosi.rootpw
+/mkosi.passphrase
 # Disk images
 *.raw
 /disks/

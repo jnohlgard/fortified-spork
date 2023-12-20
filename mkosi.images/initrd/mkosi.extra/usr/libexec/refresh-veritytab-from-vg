@@ -44,20 +44,41 @@ printf 'Checking if VG %s exists\n' "${target_vg}"
 vgdisplay -s "${target_vg}" || die 'Create the target VG %s first\n' "${target_vg}"
 lvs "${target_vg}" || true
 
+if ! [ -s "/etc/veritytab" ]; then
+  # sed (used below) doesn't behave well on a zero length file.
+  printf '\n' >> /etc/veritytab
+fi
+
+ca_file="${CREDENTIALS_DIRECTORY:-/run/systemd}/verity.crt"
+
 image_prefix="${image_id}_${image_version}"
 for image_type in root usr; do
   lv_name="${image_prefix}_${image_type}-${arch}"
   verity_sig_path="/dev/${target_vg}/${lv_name}-verity-sig"
   [ -e "${verity_sig_path}" ] || continue
-  verity_roothash="$(jq -j .rootHash < "${verity_sig_path}")" || continue
-  verity_sig="$(jq -j .signature < "${verity_sig_path}")" || continue
+  verity_roothash="$(jq -j '.rootHash' < "${verity_sig_path}")" || continue
 
   if [ -n "${verity_roothash}" ]; then
+    roothash_file="$(mktemp -t refresh-verity-XXXXXXX.roothash)"
+    printf '%s' "${verity_roothash}" > "${roothash_file}"
+    printf 'Checking signature on %s\n' "${verity_sig_path}"
+    roothash_verified="$(jq -j '.signature' < "${verity_sig_path}" | \
+      openssl smime -verify -binary \
+        -inform der -CAfile "${ca_file}" \
+        -content "${roothash_file}" || true)"
+    if [ -z "${roothash_verified}" ] || [ "${roothash_verified}" != "${verity_roothash}" ]; then
+      >&2 printf 'Verity root hash signature verification failed for %s\n' "${verity_sig_path}"
+      rm -f "${roothash_file}"
+      continue
+    fi
+    rm -f "${roothash_file}"
     sed -i \
       -e "/^${image_type} /d" \
-      -e "\$a ${image_type} /dev/${target_vg}/${lv_name} /dev/${target_vg}/${lv_name}-verity ${verity_roothash} root-hash-signature=base64:${verity_sig}" \
+      -e "\$a ${image_type} /dev/${target_vg}/${lv_name} /dev/${target_vg}/${lv_name}-verity ${verity_roothash} auto,x-initrd.attach" \
       /etc/veritytab
     printf 'Added %s to /etc/veritytab\n' "${target_vg}/${lv_name}"
-    systemctl add-wants --runtime "dev-mapper-${image_type}.device" "systemd-veritysetup@${image_type}.service"
+    #systemctl add-wants --runtime "dev-mapper-${image_type}.device" "systemd-veritysetup@${image_type}.service"
+    mkdir -p "/run/systemd/system/dev-mapper-${image_type}.device.requires"
+    ln -sfv "../systemd-veritysetup@${image_type}.service" "/run/systemd/system/dev-mapper-${image_type}.device.requires/systemd-veritysetup@${image_type}.service"
   fi
 done
