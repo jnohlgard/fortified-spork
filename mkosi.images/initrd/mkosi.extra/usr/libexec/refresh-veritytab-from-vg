@@ -49,7 +49,10 @@ if ! [ -s "/etc/veritytab" ]; then
   printf '\n' >> /etc/veritytab
 fi
 
-ca_file="${CREDENTIALS_DIRECTORY:-/run/systemd}/verity.crt"
+ca_file='/etc/secure-boot/verity.crt'
+if [ -n "${CREDENTIALS_DIRECTORY-}" ] && [ -e "${CREDENTIALS_DIRECTORY-}/verity.crt" ]; then
+  ca_file="${CREDENTIALS_DIRECTORY-}/verity.crt"
+fi
 
 image_prefix="${image_id}_${image_version}"
 for image_type in root usr; do
