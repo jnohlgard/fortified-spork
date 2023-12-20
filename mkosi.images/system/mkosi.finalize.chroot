@@ -45,4 +45,12 @@ set -x
 mkdir -p /sysroot/etc
 cp /usr/share/factory/etc/{passwd,group} /sysroot/etc/
 systemd-tmpfiles --root /sysroot/ --graceful --create /usr/lib/tmpfiles.d/spork-sysroot.conf
-rm /sysroot/etc/{passwd,group}
+setfiles -mFr /sysroot -v -c /etc/selinux/targeted/policy/policy.* /etc/selinux/targeted/contexts/files/file_contexts /sysroot
+rm -f /sysroot/etc/{passwd,group}
+find /boot
+find /efi
+cp -av /efi/EFI/systemd/systemd-bootx64.efi "${CHROOT_OUTPUTDIR}/"
+printf 'osrel:\n'
+cat /usr/lib/os-release
+ls -la /etc/os-release /usr/lib/os-release
+printf 'end osrel\n'

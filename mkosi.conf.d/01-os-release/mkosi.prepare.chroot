@@ -6,12 +6,12 @@ if [ $# -gt 0 ] && [ "$1" = 'build' ]; then
   exit 0
 fi
 
-printf 'Patching /etc/os-release\n'
+printf 'Patching /usr/lib/os-release\n'
 MKOSI_IMAGE_VERSION="${IMAGE_VERSION}"
 MKOSI_IMAGE_ID="${IMAGE_ID}"
-source /etc/os-release
+source /usr/lib/os-release
 sed -i \
-  -e "/^PRETTY_NAME=/d;1i PRETTY_NAME=\"Immutable Spork ${NAME} ${VERSION} <detached LUKS>\"" \
-  -e "/^IMAGE_VERSION=/d;1i IMAGE_VERSION=\"${MKOSI_IMAGE_VERSION}\"" \
-  -e "/^IMAGE_ID=/d;1i IMAGE_ID=\"${MKOSI_IMAGE_ID}\"" \
-  /etc/os-release
+  -e "/^PRETTY_NAME=/d;\$a PRETTY_NAME=\"Immutable Spork ${NAME} ${VERSION} <detached LUKS>\"" \
+  -e "/^IMAGE_VERSION=/d;\$a IMAGE_VERSION=\"${MKOSI_IMAGE_VERSION}\"" \
+  -e "/^IMAGE_ID=/d;\$a IMAGE_ID=\"${MKOSI_IMAGE_ID}\"" \
+  /usr/lib/os-release
