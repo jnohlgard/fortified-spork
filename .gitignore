@@ -1,13 +1,12 @@
-/.venv/
-/mkosi.tools
-/mkosi.crt
-/mkosi.der
-/mkosi.key
-/mkosi.rootpw
-/mkosi.passphrase
+.venv/
+mkosi.tools/
+mkosi.crt
+mkosi.key
+mkosi.rootpw
+mkosi.passphrase
 # Disk images
 *.raw
 /disks/
 # temporary workspaces
 .mkosi-*/
-/mkosi.output
+mkosi.output/
