@@ -54,27 +54,46 @@ if [ -n "${CREDENTIALS_DIRECTORY-}" ] && [ -e "${CREDENTIALS_DIRECTORY-}/verity.
   ca_file="${CREDENTIALS_DIRECTORY-}/verity.crt"
 fi
 
+kernel_cmdline_arg() {
+  [ $# -eq 1 ] || die 'Usage: kernel_cmdline_arg <search>\n'
+
+  argname="$1";shift
+  set -- $(cat /proc/cmdline)
+  for arg in "$@"; do
+    case "${arg}" in
+      "${argname}="*)
+        printf '%s' "${arg#*=}"
+        return
+        ;;
+    esac
+  done
+}
+
 image_prefix="${image_id}_${image_version}"
 for image_type in root usr; do
   lv_name="${image_prefix}_${image_type}-${arch}"
-  verity_sig_path="/dev/${target_vg}/${lv_name}-verity-sig"
-  [ -e "${verity_sig_path}" ] || continue
-  verity_roothash="$(jq -j '.rootHash' < "${verity_sig_path}")" || continue
-
-  if [ -n "${verity_roothash}" ]; then
-    roothash_file="$(mktemp -t refresh-verity-XXXXXXX.roothash)"
-    printf '%s' "${verity_roothash}" > "${roothash_file}"
-    printf 'Checking signature on %s\n' "${verity_sig_path}"
-    roothash_verified="$(jq -j '.signature' < "${verity_sig_path}" | \
-      openssl smime -verify -binary \
-        -inform der -CAfile "${ca_file}" \
-        -content "${roothash_file}" || true)"
-    if [ -z "${roothash_verified}" ] || [ "${roothash_verified}" != "${verity_roothash}" ]; then
-      >&2 printf 'Verity root hash signature verification failed for %s\n' "${verity_sig_path}"
+  verity_roothash="$(kernel_cmdline_arg "${image_type}hash")"
+  if [ -z "${verity_roothash}" ]; then
+    verity_sig_path="/dev/${target_vg}/${lv_name}-verity-sig"
+    [ -e "${verity_sig_path}" ] || continue
+    verity_roothash="$(jq -j '.rootHash' < "${verity_sig_path}")" || continue
+    if [ -n "${verity_roothash}" ]; then
+      roothash_file="$(mktemp -t refresh-verity-XXXXXXX.roothash)"
+      printf '%s' "${verity_roothash}" > "${roothash_file}"
+      printf 'Checking signature on %s\n' "${verity_sig_path}"
+      roothash_verified="$(jq -j '.signature' < "${verity_sig_path}" | \
+        openssl smime -verify -binary \
+          -inform der -CAfile "${ca_file}" \
+          -content "${roothash_file}" || true)"
+      if [ -z "${roothash_verified}" ] || [ "${roothash_verified}" != "${verity_roothash}" ]; then
+        >&2 printf 'Verity root hash signature verification failed for %s\n' "${verity_sig_path}"
+        rm -f "${roothash_file}"
+        continue
+      fi
       rm -f "${roothash_file}"
-      continue
     fi
-    rm -f "${roothash_file}"
+  fi
+  if [ -n "${verity_roothash}" ]; then
     sed -i \
       -e "/^${image_type} /d" \
       -e "\$a ${image_type} /dev/${target_vg}/${lv_name} /dev/${target_vg}/${lv_name}-verity ${verity_roothash} auto,x-initrd.attach" \

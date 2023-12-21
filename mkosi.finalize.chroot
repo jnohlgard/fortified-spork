@@ -1,12 +1,6 @@
 #!/bin/sh
 set -eu
 
-# wipe any root password (from mkosi.rootpw or other) from system image
-# and disable root logins by default
-printf 'Disable root logins\n'
-set -x
-usermod -p '!' root
-
 set +x
 printf 'Enabling nss-altfiles for passwd and group\n'
 set -x

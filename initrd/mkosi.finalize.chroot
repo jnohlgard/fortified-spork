@@ -1,10 +1,6 @@
 #!/usr/bin/sh
 set -eu
 
-printf 'Open root logins\n'
-set -x
-usermod -p '' root
-
 set +x
 printf 'Set systemd default target\n'
 set -x
