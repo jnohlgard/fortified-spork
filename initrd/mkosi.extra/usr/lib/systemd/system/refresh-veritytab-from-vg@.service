@@ -8,9 +8,10 @@ After=vgcreate@%i.service
 After=copy-sys-images@%i.service
 Before=initrd-install-sys.target
 Before=initrd-root-device.target initrd-usr-device.target initrd-root-fs.target initrd-usr-fs.target initrd-fs.target
+Before=sysroot.mount sysusr-usr.mount sysroot-usr.mount sysroot-etc.mount
 Before=shutdown.target initrd-switch-root.target
 Conflicts=shutdown.target initrd-switch-root.target
-ConditionPathExistsGlob=/dev/%I/*-verity-sig
+ConditionPathExistsGlob=/dev/%I/*-verity
 
 [Service]
 Type=oneshot

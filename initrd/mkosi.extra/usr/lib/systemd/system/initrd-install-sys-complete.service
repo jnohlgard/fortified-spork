@@ -3,16 +3,17 @@ Description=Done installing system images
 DefaultDependencies=no
 After=initrd-install-sys.target
 Before=shutdown.target initrd-switch-root.target
+Requires=emergency.service
+Before=emergency.service
+Requires=sysroot.mount
+Before=sysroot.mount
 Conflicts=shutdown.target initrd-switch-root.target
 OnSuccess=default.target
-OnSuccess=initrd-root-fs.target
-OnSuccess=initrd-fs.target
-OnSuccess=sysroot.mount
 OnSuccessJobMode=replace
 
 [Service]
 Type=oneshot
-RemainAfterExit=yes
 StandardOutput=journal+console
 StandardError=inherit
+#ExecStartPre=-systemctl reset-failed
 ExecStart=sh -c "printf 'Done installing system images\n'"

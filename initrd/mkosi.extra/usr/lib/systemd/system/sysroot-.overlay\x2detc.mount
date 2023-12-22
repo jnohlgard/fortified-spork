@@ -7,5 +7,4 @@ After=blockdev@dev-vg\x2dsys-overlay\x2detc.target
 
 [Mount]
 What=/dev/vg-sys/overlay-etc
-# NB: Mounting read-only by default, but it is overridable by root using mount -o remount,rw
-Options=ro,nosuid,nodev
+Options=nosuid,nodev

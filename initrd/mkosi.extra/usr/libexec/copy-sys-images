@@ -75,6 +75,12 @@ if ! lvdisplay --column "${target_vg}/overlay-etc"; then
     -n 'overlay-etc' \
     "${target_vg}"
   mkfs.xfs -m rmapbt=1 -L 'overlay-etc' "/dev/${target_vg}/overlay-etc"
+  mkfs_mountpoint="$(mktemp -d -t overlay-etc.XXXXXXXX)"
+  mount -v "/dev/${target_vg}/overlay-etc" "${mkfs_mountpoint}"
+  mkdir -pv "${mkfs_mountpoint}/overlay" "${mkfs_mountpoint}/workdir"
+  umount -v "${mkfs_mountpoint}"
+  rmdir -v "${mkfs_mountpoint}" || true
+  mkfs_mountpoint=
 fi
 
 printf 'Creating LVs and copying blocks and files\n'
@@ -132,9 +138,9 @@ for image_type in root usr; do
         -n "${lv_name}-verity-sig" \
         "${target_vg}"
       udevadm lock -d "/dev/${target_vg}/${lv_name}-verity-sig" \
-        dd status=progress bs=1M conv=fsync oflag=direct \
+        dd status=none bs=1M conv=fsync oflag=direct \
           if=/dev/zero \
-          of="/dev/${target_vg}/${lv_name}-verity-sig"
+          of="/dev/${target_vg}/${lv_name}-verity-sig" 2>/dev/null
       udevadm lock -d "/dev/${target_vg}/${lv_name}-verity-sig" \
         dd status=progress bs=1M conv=fsync oflag=direct \
           if="${verity_sig_file}" \

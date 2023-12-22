@@ -82,6 +82,7 @@ for image_type in root usr; do
       printf '%s' "${verity_roothash}" > "${roothash_file}"
       printf 'Checking signature on %s\n' "${verity_sig_path}"
       roothash_verified="$(jq -j '.signature' < "${verity_sig_path}" | \
+        base64 -d | \
         openssl smime -verify -binary \
           -inform der -CAfile "${ca_file}" \
           -content "${roothash_file}" || true)"
