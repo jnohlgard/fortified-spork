@@ -9,7 +9,7 @@ After=initrd-auth.target
 Wants=cryptsetup-pre.target
 After=cryptsetup-pre.target
 Before=systemd-cryptsetup-by-%j@%i.service
-Before=blockdev@dev-mapper-luks\x2d%i.target
+Before=blockdev@dev-mapper-%i.target
 Before=cryptsetup.target
 Before=initrd-root-device.target
 Before=initrd-usr-fs.target initrd-root-fs.target
@@ -22,7 +22,6 @@ OnSuccess=systemd-cryptsetup-by-%j@%i.service
 Type=oneshot
 StandardOutput=journal+console
 SyslogIdentifier=luks-format@%I
-#RemainAfterExit=yes
 # The luksFormat script supports some environment variables:
 #Environment="LUKSFORMAT_CIPHER="
 #Environment="LUKSFORMAT_CIPHER_KEYSIZE="

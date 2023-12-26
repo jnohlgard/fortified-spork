@@ -69,6 +69,7 @@ kernel_cmdline_arg() {
   done
 }
 
+systemctl list-jobs --after --before || true
 image_prefix="${image_id}_${image_version}"
 for image_type in root usr; do
   lv_name="${image_prefix}_${image_type}-${arch}"
@@ -105,3 +106,5 @@ for image_type in root usr; do
     ln -sfv "../systemd-veritysetup@${image_type}.service" "/run/systemd/system/dev-mapper-${image_type}.device.requires/systemd-veritysetup@${image_type}.service"
   fi
 done
+
+systemctl list-jobs --after --before || true

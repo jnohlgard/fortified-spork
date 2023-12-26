@@ -24,7 +24,6 @@ OnSuccess=systemd-cryptsetup-detached-by-%j@%i.service
 Type=oneshot
 StandardOutput=journal+console
 SyslogIdentifier=luks-format-detached@%I
-#RemainAfterExit=yes
 # The luksFormat script supports some environment variables:
 #Environment="LUKSFORMAT_CIPHER="
 #Environment="LUKSFORMAT_CIPHER_KEYSIZE="

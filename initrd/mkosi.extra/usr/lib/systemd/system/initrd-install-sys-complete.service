@@ -2,18 +2,19 @@
 Description=Done installing system images
 DefaultDependencies=no
 After=initrd-install-sys.target
-Before=shutdown.target initrd-switch-root.target
-Requires=emergency.service
-Before=emergency.service
-Requires=sysroot.mount
 Before=sysroot.mount
+Before=sysusr-usr.mount
+Before=shutdown.target initrd-switch-root.target
 Conflicts=shutdown.target initrd-switch-root.target
-OnSuccess=default.target
+OnSuccess=initrd.target
+OnSuccess=veritysetup.target
 OnSuccessJobMode=replace
 
 [Service]
 Type=oneshot
 StandardOutput=journal+console
 StandardError=inherit
-#ExecStartPre=-systemctl reset-failed
+SyslogIdentifier=%N
+ExecStartPre=-systemctl daemon-reload
+ExecStartPre=-systemctl --no-block reset-failed
 ExecStart=sh -c "printf 'Done installing system images\n'"

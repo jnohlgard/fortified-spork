@@ -1,0 +1,19 @@
+[Unit]
+Description=Prepare for boot-time user authentication
+DefaultDependencies=no
+After=systemd-pcrphase-initrd.service
+Requires=initrd-auth-pre.target
+Before=initrd-auth-pre.target
+Requires=initrd-auth.target
+Before=initrd-auth.target
+Before=shutdown.target initrd-switch-root.target
+Conflicts=shutdown.target initrd-switch-root.target
+OnSuccess=initrd-auth.target
+OnSuccessJobMode=flush
+
+[Service]
+Type=oneshot
+StandardOutput=journal+console
+StandardError=inherit
+SyslogIdentifier=%N
+ExecStart=sh -c "printf 'Begin boot-time user authentication\n'"

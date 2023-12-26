@@ -70,12 +70,12 @@ lvs "${target_vg}" || true
 
 printf 'Checking for /etc overlay backing volume\n'
 if ! lvdisplay --column "${target_vg}/overlay-etc"; then
+  mkfs_mountpoint="$(mktemp -d -t overlay-etc.XXXXXXXX)"
   lvcreate -v -ay \
     -L 500M \
     -n 'overlay-etc' \
     "${target_vg}"
-  mkfs.xfs -m rmapbt=1 -L 'overlay-etc' "/dev/${target_vg}/overlay-etc"
-  mkfs_mountpoint="$(mktemp -d -t overlay-etc.XXXXXXXX)"
+  udevadm lock -d "/dev/${target_vg}/overlay-etc" mkfs.xfs -m rmapbt=1 -L 'overlay-etc' "/dev/${target_vg}/overlay-etc"
   mount -v "/dev/${target_vg}/overlay-etc" "${mkfs_mountpoint}"
   mkdir -pv "${mkfs_mountpoint}/overlay" "${mkfs_mountpoint}/workdir"
   umount -v "${mkfs_mountpoint}"

@@ -15,8 +15,10 @@ RequiresMountsFor=%t/spork/sysimages
 
 [Service]
 Type=oneshot
+RemainAfterExit=yes
 StandardOutput=journal+console
 StandardError=inherit
+SyslogIdentifier=%p@%i
 ExecStartPre=printf '================ copy-sys-images "%%s" "%%s" "%%s" "%%s"\n' '%I' '%t/spork/sysimages' '%M' '%A'
 ExecStart=/usr/libexec/copy-sys-images '%I' '%t/spork/sysimages' '%M' '%A'
 

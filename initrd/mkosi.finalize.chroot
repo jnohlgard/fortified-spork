@@ -1,8 +1,0 @@
-#!/usr/bin/sh
-set -eu
-
-set +x
-printf 'Set systemd default target\n'
-set -x
-systemctl set-default multi-user.target
-

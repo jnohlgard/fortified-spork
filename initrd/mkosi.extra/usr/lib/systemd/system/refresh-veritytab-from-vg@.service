@@ -21,7 +21,7 @@ ImportCredential=verity.*
 ImportCredential=veritysetup.*
 ExecStartPre=touch /etc/veritytab
 ExecStart=/usr/libexec/refresh-veritytab-from-vg '%I'
-ExecStartPost=-systemctl --no-block daemon-reload
+ExecStartPost=-systemctl daemon-reload
 
 [Install]
 WantedBy=initrd-fs.target

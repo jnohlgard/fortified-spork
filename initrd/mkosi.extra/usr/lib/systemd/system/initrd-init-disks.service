@@ -5,7 +5,7 @@ Requires=initrd-auth.target
 After=initrd-auth.target
 Requires=initrd-init-disks-pre.target
 Before=initrd-init-disks-pre.target
-Wants=initrd-init-disks.target
+Requires=initrd-init-disks.target
 Before=initrd-init-disks.target
 Before=cryptsetup.target
 Before=shutdown.target initrd-switch-root.target
@@ -15,7 +15,7 @@ OnSuccessJobMode=flush
 
 [Service]
 Type=oneshot
-RemainAfterExit=yes
 StandardOutput=journal+console
 StandardError=inherit
+SyslogIdentifier=%N
 ExecStart=sh -c "printf 'Initializing encrypted storage\n'"

@@ -1,7 +1,7 @@
 [Unit]
 Description=Generate key for TOTP authentication
 DefaultDependencies=no
-After=initrd-auth-pre.service
+After=initrd-auth-pre.target
 After=systemd-random-seed.service
 Before=initrd-totp.service
 Before=initrd-auth.target
@@ -14,9 +14,10 @@ RequiresMountsFor=%t/credstore.encrypted
 RequiresMountsFor=/efi/loader/credentials
 
 [Service]
+Type=oneshot
 StandardOutput=tty
 StandardError=inherit
-Type=oneshot
+SyslogIdentifier=%N
 ExecStartPre=mkdir -m 0700 -p -Z -v '%t/credstore.encrypted'
 ExecStartPre=mkdir -p -v '/efi/loader/credentials'
 ExecStart=/usr/libexec/totp-generate 'initrd-totp-%I' '%t/credstore.encrypted/'

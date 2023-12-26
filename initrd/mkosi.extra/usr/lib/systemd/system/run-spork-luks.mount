@@ -1,10 +1,10 @@
 [Unit]
 Description=Mount %f
-After=blockdev@dev-mapper-luks\x2dlukshdrs.target
-BindsTo=dev-mapper-luks\x2dlukshdrs.device
-After=dev-mapper-luks\x2dlukshdrs.device
+After=blockdev@dev-mapper-lukshdrs.target
+BindsTo=dev-mapper-lukshdrs.device
+After=dev-mapper-lukshdrs.device
 
 [Mount]
-What=/dev/mapper/luks-lukshdrs
+What=/dev/mapper/lukshdrs
 DirectoryMode=0700
 LazyUnmount=yes

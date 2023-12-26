@@ -12,8 +12,8 @@ OnSuccessJobMode=replace
 
 [Service]
 Type=oneshot
-RemainAfterExit=yes
 StandardOutput=journal+console
 StandardError=inherit
+SyslogIdentifier=%N
 ExecStartPre=-systemctl reset-failed
 ExecStart=sh -c "printf 'Starting installation of sysimages\n'"

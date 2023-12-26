@@ -5,13 +5,13 @@ Requires=initrd-auth.target
 After=initrd-auth.target
 Before=shutdown.target initrd-switch-root.target
 Conflicts=shutdown.target initrd-switch-root.target
-OnSuccess=default.target
-OnSuccessJobMode=replace
+OnSuccess=initrd-init-disks.target
+OnSuccessJobMode=flush
 
 [Service]
 Type=oneshot
-RemainAfterExit=yes
 StandardOutput=journal+console
 StandardError=inherit
+SyslogIdentifier=%N
 ExecStartPre=-systemctl reset-failed
 ExecStart=sh -c "printf 'User authentication complete!\n'"
