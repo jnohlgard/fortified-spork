@@ -8,6 +8,7 @@ After=initrd-auth.target
 Wants=cryptsetup-pre.target
 After=cryptsetup-pre.target
 Before=systemd-cryptsetup-detached-by-%j@%i.service
+Before=systemd-cryptsetup@luks\x2d%i.service
 Before=blockdev@dev-mapper-luks\x2d%i.target
 Before=cryptsetup.target
 Before=initrd-root-device.target

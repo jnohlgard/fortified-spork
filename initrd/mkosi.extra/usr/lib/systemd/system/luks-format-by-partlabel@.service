@@ -9,6 +9,7 @@ After=initrd-auth.target
 Wants=cryptsetup-pre.target
 After=cryptsetup-pre.target
 Before=systemd-cryptsetup-by-%j@%i.service
+Before=systemd-cryptsetup@%i.service
 Before=blockdev@dev-mapper-%i.target
 Before=cryptsetup.target
 Before=initrd-root-device.target
@@ -16,7 +17,6 @@ Before=initrd-usr-fs.target initrd-root-fs.target
 Before=shutdown.target initrd-switch-root.target
 Conflicts=shutdown.target initrd-switch-root.target
 ConditionVirtualization=!container
-OnSuccess=systemd-cryptsetup-by-%j@%i.service
 
 [Service]
 Type=oneshot

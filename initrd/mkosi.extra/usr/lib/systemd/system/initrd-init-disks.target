@@ -2,6 +2,7 @@
 Description=Initialize encrypted storage
 DefaultDependencies=no
 After=systemd-udevd-kernel.socket
+Wants=systemd-udevd.service
 After=systemd-udevd.service
 After=systemd-udev-trigger.service
 After=systemd-udev-settle.service

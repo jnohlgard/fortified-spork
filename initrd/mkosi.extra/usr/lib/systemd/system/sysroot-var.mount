@@ -1,0 +1,10 @@
+[Unit]
+Description=/%J
+Before=initrd-fs.target
+Requires=systemd-fsck@dev-vg\x2dsys-%M_%j.service
+After=systemd-fsck@dev-vg\x2dsys-%M_%j.service
+After=blockdev@dev-vg\x2dsys-%M_%j.target
+
+[Mount]
+What=/dev/vg-sys/%M_%J
+Options=nosuid,nodev

@@ -1,31 +1,24 @@
 #!/bin/sh
 set -eu
 
-set +x
-printf 'Enabling nss-altfiles for passwd and group\n'
-set -x
-cp -v /etc/passwd /etc/group /usr/lib/
-# Only keep root in the primary passwd file, the rest can be found using nss-altfiles
-getent passwd root > /etc/passwd.new
-mv -Z -v /etc/passwd.new /etc/passwd
-# Only keep groups that are relevant to human users
-getent group wheel sudo root adm users dialout libvirt usb video audio | sort -t: -k3 -g > /etc/group.new || true
-if [ -s '/etc/group.new' ]; then
-  mv -Z -v /etc/group.new /etc/group
-else
-  rm -f /etc/group.new
-fi
-
-authselect enable-feature with-altfiles
-authselect current
-authselect check
-
 # Masking dnsmasq.service is recommended in Fedora/RHEL documentation when
 # using high level network configuration management tools (NetworkManager,
 # systemd-networkd...)
 systemctl mask dnsmasq.service
 # Masking docker.socket to avoid accidental activation in the future
 systemctl mask docker.socket
+
+set +x
+printf 'Adding /.overlay-etc to /etc/selinux/.../file_contexts.subs\n'
+set -x
+printf '%s\n' \
+  '/.overlay-etc/overlay /etc' \
+  '/.overlay-etc/workdir /etc' \
+  >> "/etc/selinux/targeted/contexts/files/file_contexts.subs"
+printf '%s\n' \
+  '/.overlay-etc system_u:object_r:etc_t:s0' \
+  >> "/etc/selinux/targeted/contexts/files/file_contexts.local"
+restorecon -vFr /etc
 
 set +x
 printf 'Stashing original /etc state to /usr/share/factory/etc/\n'
@@ -40,6 +33,7 @@ mkdir -p /sysroot/etc
 cp /usr/share/factory/etc/{passwd,group} /sysroot/etc/
 systemd-tmpfiles --root /sysroot/ --graceful --create /usr/lib/tmpfiles.d/spork-sysroot.conf
 setfiles -mFr /sysroot -v -c /etc/selinux/targeted/policy/policy.* /etc/selinux/targeted/contexts/files/file_contexts /sysroot
+chcon --reference=/sysroot/etc /sysroot/.overlay-etc
 rm -f /sysroot/etc/{passwd,group}
 find /boot
 find /efi
