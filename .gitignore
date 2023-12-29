@@ -4,6 +4,7 @@ mkosi.crt
 mkosi.key
 mkosi.rootpw
 mkosi.passphrase
+mkosi.local.conf
 # Disk images
 *.raw
 /disks/

@@ -12,6 +12,8 @@ set +x
 printf 'Adding /.overlay-etc to /etc/selinux/.../file_contexts.subs\n'
 set -x
 printf '%s\n' \
+  '/home /var/home' \
+  '/usr/share/factory/etc /etc' \
   '/.overlay-etc/overlay /etc' \
   '/.overlay-etc/workdir /etc' \
   >> "/etc/selinux/targeted/contexts/files/file_contexts.subs"

@@ -14,4 +14,5 @@ sed -i \
   -e "/^PRETTY_NAME=/d;\$a PRETTY_NAME=\"Immutable Spork ${NAME} ${VERSION} <detached LUKS>\"" \
   -e "/^IMAGE_VERSION=/d;\$a IMAGE_VERSION=\"${MKOSI_IMAGE_VERSION}\"" \
   -e "/^IMAGE_ID=/d;\$a IMAGE_ID=\"${MKOSI_IMAGE_ID}\"" \
+  -e "/^DEFAULT_HOSTNAME=/d;\$a DEFAULT_HOSTNAME=\"${MKOSI_IMAGE_ID}\"" \
   /usr/lib/os-release
