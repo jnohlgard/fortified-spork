@@ -20,7 +20,7 @@ Type=oneshot
 StandardOutput=journal+console
 SyslogIdentifier=%p@%f
 RemainAfterExit=yes
-ExecCondition=/usr/bin/udevadm lock -d '%f' /usr/libexec/is-disk-blank '%f'
+ExecCondition=/usr/libexec/is-disk-blank '%f'
 ExecStart=/usr/bin/systemd-repart --definitions=/usr/lib/repart-empty.d --empty=require --dry-run=no '%f'
 # Wait for udev to settle partition updates to avoid a race where the device
 # node symlink for a partition label disappears while starting a systemd unit

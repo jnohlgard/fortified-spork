@@ -16,7 +16,7 @@ StandardError=inherit
 SyslogIdentifier=%p@%f
 TimeoutSec=infinity
 Environment="EXTRA_REENCRYPT_ARGS="
-ExecCondition=udevadm lock -d '%f' sh -c "cryptsetup isLuks '%f' && echo | cryptsetup open --test-passphrase --disable-external-tokens '%f'"
+ExecCondition=sh -c "cryptsetup isLuks '%f' && echo | cryptsetup open --test-passphrase --disable-external-tokens '%f'"
 ExecStartPre=echo 'Rotating volume encryption key on %f. This may take some time...'
 ExecStart=udevadm lock -d '%f' sh -c "echo | cryptsetup reencrypt --progress-frequency=2 ${EXTRA_REENCRYPT_ARGS} '%f'"
 

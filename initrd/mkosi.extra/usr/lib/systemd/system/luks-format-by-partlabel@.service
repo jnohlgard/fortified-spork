@@ -33,5 +33,5 @@ SyslogIdentifier=luks-format@%I
 #Environment="LUKSFORMAT_FIDO2_DEVICE=auto"
 # Run mkfs or similar tool on the disk after formatting:
 #Environment="LUKSFORMAT_MKFS="
-ExecCondition=/usr/bin/udevadm lock -d '/dev/disk/by-%J/%I' /usr/libexec/is-disk-blank '/dev/disk/by-%J/%I'
+ExecCondition=/usr/libexec/is-disk-blank '/dev/disk/by-%J/%I'
 ExecStart=/usr/libexec/luks-format '/dev/disk/by-%J/%I'

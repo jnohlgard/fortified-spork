@@ -228,6 +228,7 @@ if [ -n "${LUKSFORMAT_TPM2_DEVICE:-}" ]; then
   flock -x --verbose "$0" systemd-cryptenroll --unlock-key-file="${keyfile_tmp}" \
     --tpm2-device="${LUKSFORMAT_TPM2_DEVICE}" \
     --tpm2-pcrs="${LUKSFORMAT_TPM2_PCRS}" \
+    --tpm2-public-key --tpm2-signature \
     "${enroll_dev}"
 fi
 
