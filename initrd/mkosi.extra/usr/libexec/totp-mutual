@@ -11,9 +11,9 @@ fi
 display_secret="$1";shift
 verify_secret="$1";shift
 
-algorithm=sha256
+algorithm=sha1
 interval=30
-digits=8
+digits=6
 window=2
 now_offset="now -$((window * interval / 2)) sec"
 sd_ask_pass_id="${0##*/}:user-totp"

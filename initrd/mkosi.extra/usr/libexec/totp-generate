@@ -38,16 +38,32 @@ systemd-creds encrypt \
 	${new_key}
 	EOF
 
-algorithm=sha256
-interval=30
-digits=8
+algorithm=sha1
+period=30
+digits=6
 window=2
-now_offset="now -$((window * interval / 2)) sec"
+now_offset="now -$((window * period / 2)) sec"
 sd_ask_pass_id="${0##*/}:${keyid}"
+
+# Text labels for authenticator app URIs, does not affect the generated code.
+issuer_urlencoded='Bootauth'
+account_urlencoded="${keyid}@hostname"
+ALGORITHM="$(printf '%s' "${algorithm}" | tr '[:lower:]' '[:upper:]')"
+otpauth_uri="otpauth://totp/${account_urlencoded}?issuer=${issuer_urlencoded}&"
+if [ "${ALGORITHM}" != "SHA1" ]; then
+  otpauth_uri="${otpauth_uri}algorithm=${algorithm}&"
+fi
+if [ "${digits}" -ne 6 ]; then
+  otpauth_uri="${otpauth_uri}digits=${digits}&"
+fi
+if [ "${period}" -ne 30 ]; then
+  otpauth_uri="${otpauth_uri}period=${period}&"
+fi
+otpauth_uri="${otpauth_uri}secret=${new_key}"
 
 verify_totp() {
   oathtool --totp="${algorithm}" \
-    --time-step-size="${interval}" \
+    --time-step-size="${period}" \
     --digits="${digits}" \
     --now="${now_offset}" \
     --window="${window}" \
@@ -59,19 +75,25 @@ verify_totp() {
 }
 
 while true; do
-  printf 'TOTP parameters:\n'
-  printf '  Algorithm: %s\n' "${algorithm}"
-  printf '  Interval: %s\n' "${interval}"
-  printf '  Digits: %s\n' "${digits}"
+  if command -v qrencode &>/dev/null; then
+    tr -cd '[:graph:]' <<-EOF | qrencode -t utf8 -m 2
+	${otpauth_uri}
+	EOF
+  fi
   cat <<-EOF
+	TOTP parameters:
+	Algorithm: ${algorithm}
+	Period: ${period}
+	Digits: ${digits}
 	TOTP key <<${keyid}>>
 	  -<([  ${new_key}  ])>-
+	Authenticator URL: ${otpauth_uri}
 	EOF
 
   if systemd-ask-password \
     --id="${sd_ask_pass_id}" \
     --icon=dialog-password \
-    --timeout="${interval}" \
+    --timeout="${period}" \
     --echo=yes \
     "Enter TOTP code to confirm:" \
     | verify_totp; then
