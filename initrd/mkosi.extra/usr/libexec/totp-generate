@@ -33,7 +33,10 @@ fi
 systemd-creds encrypt \
   --with-key=tpm2 \
   --name="${keyid}" \
-  --tpm2-pcrs=0+4+7+14 \
+  --tpm2-pcrs=7 \
+  --tpm2-public-key=/.extra/tpm2-pcr-public-key.pem \
+  --tpm2-signature=/.extra/tpm2-pcr-signature.json \
+  --tpm2-public-key-pcrs=11 \
   - "${outdir}/${keyid}" <<-EOF
 	${new_key}
 	EOF
@@ -80,6 +83,7 @@ while true; do
 	${otpauth_uri}
 	EOF
   fi
+  printf '\nCurrent time (UTC): %s\n' "$(date -u)"
   cat <<-EOF
 	TOTP parameters:
 	Algorithm: ${algorithm}
