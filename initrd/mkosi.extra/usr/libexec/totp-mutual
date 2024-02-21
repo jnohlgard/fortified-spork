@@ -47,7 +47,7 @@ verify_totp() {
     - >/dev/null 2>/dev/null
 }
 
-trap 'exit 1' INT TERM EXIT QUIT
+trap 'exit 1' EXIT
 
 while true
 do
