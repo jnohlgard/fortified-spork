@@ -11,3 +11,5 @@ mkosi.local.conf
 # temporary workspaces
 .mkosi-*/
 mkosi.output/
+# Secureboot keys
+mkosi.images/bootdisk/mkosi.extra/efi/loader/keys/
