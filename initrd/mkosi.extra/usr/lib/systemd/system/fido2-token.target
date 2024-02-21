@@ -1,13 +1,10 @@
 [Unit]
 Description=Check for security token
 DefaultDependencies=no
+After=initrd-auth.target
 Requires=dev-security-fido.device
 After=dev-security-fido.device
-Wants=initrd-auth.service
-Before=initrd-auth.service
 Before=cryptsetup-pre.target
 Before=shutdown.target initrd-switch-root.target
 Conflicts=shutdown.target initrd-switch-root.target
-OnFailure=wait-for-yubikey.target
-OnFailureJobMode=flush
-JobTimeoutSec=10
+JobTimeoutSec=30

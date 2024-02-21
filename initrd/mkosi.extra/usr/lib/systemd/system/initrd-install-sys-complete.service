@@ -6,9 +6,7 @@ Before=sysroot.mount
 Before=sysusr-usr.mount
 Before=shutdown.target initrd-switch-root.target
 Conflicts=shutdown.target initrd-switch-root.target
-OnSuccess=initrd.target
-OnSuccess=veritysetup.target
-OnSuccessJobMode=replace
+OnSuccess=default.target
 
 [Service]
 Type=oneshot

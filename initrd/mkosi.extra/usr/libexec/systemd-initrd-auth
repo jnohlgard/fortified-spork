@@ -1,0 +1,3 @@
+#!/usr/bin/sh
+
+exec /usr/lib/systemd/systemd --unit=initrd-auth.target

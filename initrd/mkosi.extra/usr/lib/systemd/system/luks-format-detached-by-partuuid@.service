@@ -19,7 +19,6 @@ Before=blockdev@dev-mapper-luks\x2d%i.target
 ConditionVirtualization=!container
 RequiresMountsFor=%t/spork/luks
 ConditionPathExists=!%t/spork/luks/%I.luks
-OnSuccess=systemd-cryptsetup-detached-by-%j@%i.service
 
 [Service]
 Type=oneshot

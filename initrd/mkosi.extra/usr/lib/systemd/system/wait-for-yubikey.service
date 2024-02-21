@@ -3,11 +3,10 @@ Description=Wait until hardware security token is present
 DefaultDependencies=no
 Wants=systemd-udevd-kernel.socket
 After=systemd-udevd-kernel.socket
+After=initrd-auth.target
 Before=wait-for-yubikey.target
 Before=shutdown.target initrd-switch-root.target
 Conflicts=shutdown.target initrd-switch-root.target
-OnSuccess=default.target
-#OnSuccessJobMode=isolate
 
 [Service]
 Type=oneshot

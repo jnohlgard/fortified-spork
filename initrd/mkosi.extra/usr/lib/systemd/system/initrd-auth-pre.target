@@ -1,6 +1,7 @@
 [Unit]
 Description=Prepare for boot-time user authentication
 DefaultDependencies=no
+Wants=systemd-pcrphase-initrd.service
 After=systemd-pcrphase-initrd.service
 Before=initrd-auth.target
 Before=shutdown.target initrd-switch-root.target

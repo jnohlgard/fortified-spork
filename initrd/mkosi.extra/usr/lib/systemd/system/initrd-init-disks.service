@@ -10,8 +10,6 @@ Before=initrd-init-disks.target
 Before=cryptsetup.target
 Before=shutdown.target initrd-switch-root.target
 Conflicts=shutdown.target initrd-switch-root.target
-OnSuccess=initrd-init-disks.target
-OnSuccessJobMode=flush
 
 [Service]
 Type=oneshot

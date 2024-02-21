@@ -8,8 +8,6 @@ Requires=initrd-auth.target
 Before=initrd-auth.target
 Before=shutdown.target initrd-switch-root.target
 Conflicts=shutdown.target initrd-switch-root.target
-OnSuccess=initrd-auth.target
-OnSuccessJobMode=flush
 
 [Service]
 Type=oneshot

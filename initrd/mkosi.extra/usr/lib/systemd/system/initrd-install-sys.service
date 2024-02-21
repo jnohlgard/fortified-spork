@@ -7,8 +7,6 @@ Wants=initrd-install-sys.target
 Before=initrd-install-sys.target
 Before=shutdown.target initrd-switch-root.target
 Conflicts=shutdown.target initrd-switch-root.target
-OnSuccess=initrd-install-sys.target
-OnSuccessJobMode=replace
 
 [Service]
 Type=oneshot
