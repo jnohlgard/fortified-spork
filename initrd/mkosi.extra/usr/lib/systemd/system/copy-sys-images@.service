@@ -5,7 +5,6 @@ Wants=cryptsetup.target
 After=cryptsetup.target
 After=initrd-init-disks.target
 After=vgcreate@%i.service
-Before=refresh-veritytab-from-vg@%i.service
 Before=initrd-install-sys.target
 Before=initrd-root-device.target initrd-fs.target
 ConditionPathExists=/etc/initrd-release
