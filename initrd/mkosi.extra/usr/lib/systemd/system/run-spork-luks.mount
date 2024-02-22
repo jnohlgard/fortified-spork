@@ -3,6 +3,8 @@ Description=Mount %f
 After=blockdev@dev-mapper-lukshdrs.target
 BindsTo=dev-mapper-lukshdrs.device
 After=dev-mapper-lukshdrs.device
+Conflicts=initrd-switch-root.target
+Before=initrd-switch-root.target
 
 [Mount]
 What=/dev/mapper/lukshdrs

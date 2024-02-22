@@ -3,6 +3,8 @@ Description=Mount %f
 After=blockdev@dev-mapper-%j.target
 BindsTo=dev-mapper-%j.device
 After=dev-mapper-%j.device
+Conflicts=initrd-switch-root.target
+Before=initrd-switch-root.target
 
 [Mount]
 What=/dev/mapper/%J
