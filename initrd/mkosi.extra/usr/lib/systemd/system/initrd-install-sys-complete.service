@@ -16,4 +16,3 @@ SyslogIdentifier=%N
 ExecStartPre=-systemctl daemon-reload
 ExecStartPre=-systemctl --no-block reset-failed
 ExecStart=sh -c "printf 'Done installing system images\n'"
-ExecStart=-systemctl daemon-reload
