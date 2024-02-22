@@ -33,7 +33,10 @@ printf 'Creating skeleton root directory\n'
 set -x
 mkdir -p /sysroot/etc
 cp /usr/share/factory/etc/{passwd,group} /sysroot/etc/
-systemd-tmpfiles --root /sysroot/ --graceful --create /usr/lib/tmpfiles.d/spork-sysroot.conf
+systemd-tmpfiles --root /sysroot/ --graceful --create \
+  /usr/lib/tmpfiles.d/00-etc-overlay.conf \
+  /usr/lib/tmpfiles.d/00-root-tree.conf \
+  /usr/lib/tmpfiles.d/01-var.conf
 setfiles -mFr /sysroot -v -c /etc/selinux/targeted/policy/policy.* /etc/selinux/targeted/contexts/files/file_contexts /sysroot
 chcon --reference=/sysroot/etc /sysroot/.overlay-etc
 rm -f /sysroot/etc/{passwd,group}
