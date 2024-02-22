@@ -42,7 +42,7 @@ source /etc/os-release
 outdir="$1";shift
 
 arch="$(uname -m | tr '_' '-')"
-ca_file='/etc/secure-boot/verity.crt'
+verity_cert='/etc/secure-boot/verity.crt'
 
 image_path='/dev/vg-sys'
 image_sig_dir="${image_path}"
@@ -61,8 +61,9 @@ for image_type in root usr; do
       roothash_verified="$(jq -j '.signature' < "${verity_sig_path}" | \
         base64 -d | \
         openssl smime -verify -binary \
-          -inform der -CAfile "${ca_file}" \
-          -content "${roothash_file}" || true)"
+          -inform der -content "${roothash_file}" \
+          -certfile "${verity_cert}" \
+          -noverify -nointern || true)"
       if [ -z "${roothash_verified}" ] || [ "${roothash_verified}" != "${verity_roothash}" ]; then
         >&2 printf 'Verity root hash signature verification failed for %s\n' "${verity_sig_path}"
         rm -f "${roothash_file}"
