@@ -49,9 +49,9 @@ if ! [ -s "/etc/veritytab" ]; then
   printf '\n' >> /etc/veritytab
 fi
 
-ca_file='/etc/secure-boot/verity.crt'
+verity_cert='/etc/secure-boot/verity.crt'
 if [ -n "${CREDENTIALS_DIRECTORY-}" ] && [ -e "${CREDENTIALS_DIRECTORY-}/verity.crt" ]; then
-  ca_file="${CREDENTIALS_DIRECTORY-}/verity.crt"
+  verity_cert="${CREDENTIALS_DIRECTORY-}/verity.crt"
 fi
 
 kernel_cmdline_arg() {
@@ -85,8 +85,9 @@ for image_type in root usr; do
       roothash_verified="$(jq -j '.signature' < "${verity_sig_path}" | \
         base64 -d | \
         openssl smime -verify -binary \
-          -inform der -CAfile "${ca_file}" \
-          -content "${roothash_file}" || true)"
+          -inform der -content "${roothash_file}" \
+          -certfile "${verity_cert}" \
+          -noverify -nointern || true)"
       if [ -z "${roothash_verified}" ] || [ "${roothash_verified}" != "${verity_roothash}" ]; then
         >&2 printf 'Verity root hash signature verification failed for %s\n' "${verity_sig_path}"
         rm -f "${roothash_file}"
