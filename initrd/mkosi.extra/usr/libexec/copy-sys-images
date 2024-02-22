@@ -128,7 +128,8 @@ for image_type in root usr; do
     printf 'Copying verity hash data...\n'
     udevadm lock -d "/dev/${target_vg}/${lv_name}-verity" \
       dd status=progress bs=4M conv=fsync oflag=direct \
-        if="${verity_source}" of="/dev/${target_vg}/${lv_name}-verity"
+        if="${verity_source}" \
+        of="/dev/${target_vg}/${lv_name}-verity"
     # change permission to readonly
     lvchange -p r "${target_vg}/${lv_name}-verity" || true
 
@@ -148,7 +149,7 @@ for image_type in root usr; do
       udevadm lock -d "/dev/${target_vg}/${lv_name}-verity-sig" \
         dd status=none bs=1M conv=fsync oflag=direct \
           if=/dev/zero \
-          of="/dev/${target_vg}/${lv_name}-verity-sig" 2>/dev/null
+          of="/dev/${target_vg}/${lv_name}-verity-sig" 2>/dev/null || true
       udevadm lock -d "/dev/${target_vg}/${lv_name}-verity-sig" \
         dd status=progress bs=1M conv=fsync oflag=direct \
           if="${verity_sig_file}" \
