@@ -13,12 +13,13 @@ Before=blockdev@dev-mapper-luks\x2d%i.target
 Before=cryptsetup.target
 Before=initrd-root-device.target
 Before=initrd-usr-fs.target initrd-root-fs.target
-Before=shutdown.target initrd-switch-root.target
-Conflicts=shutdown.target initrd-switch-root.target
+Before=shutdown.target
+Conflicts=shutdown.target
 Before=blockdev@dev-mapper-luks\x2d%i.target
 ConditionVirtualization=!container
 RequiresMountsFor=%t/spork/luks
 ConditionPathExists=!%t/spork/luks/%I.luks
+ConditionPathExists=/usr/lib/initrd-release
 
 [Service]
 Type=oneshot

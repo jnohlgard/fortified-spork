@@ -8,8 +8,8 @@ Before=initrd-init-disks-pre.target
 Requires=initrd-init-disks.target
 Before=initrd-init-disks.target
 Before=cryptsetup.target
-Before=shutdown.target initrd-switch-root.target
-Conflicts=shutdown.target initrd-switch-root.target
+Before=shutdown.target
+Conflicts=shutdown.target
 
 [Service]
 Type=oneshot

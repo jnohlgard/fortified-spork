@@ -5,8 +5,9 @@ Wants=initrd-init-disks.target
 After=initrd-init-disks.target
 Wants=initrd-install-sys.target
 Before=initrd-install-sys.target
-Before=shutdown.target initrd-switch-root.target
-Conflicts=shutdown.target initrd-switch-root.target
+ConditionPathExists=/etc/initrd-release
+Before=shutdown.target
+Conflicts=shutdown.target
 
 [Service]
 Type=oneshot

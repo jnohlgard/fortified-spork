@@ -18,3 +18,4 @@ Before=initrd-root-device.target systemd-fsck-root.service
 Before=initrd-fs.target initrd-root-fs.target initrd-usr-fs.target 
 Conflicts=shutdown.target
 Before=shutdown.target
+ConditionPathExists=/usr/lib/initrd-release

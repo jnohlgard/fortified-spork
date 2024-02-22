@@ -10,8 +10,8 @@ Before=initrd-init-disks.target
 Before=cryptsetup-pre.target
 Before=initrd-root-device.target
 Before=initrd-usr-fs.target initrd-root-fs.target
-Before=shutdown.target initrd-switch-root.target
-Conflicts=shutdown.target initrd-switch-root.target
+Before=shutdown.target
+Conflicts=shutdown.target
 ConditionVirtualization=!container
 ConditionDirectoryNotEmpty=/usr/lib/repart-empty.d
 

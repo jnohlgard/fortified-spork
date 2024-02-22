@@ -10,8 +10,8 @@ After=initrd-auth.target
 Before=cryptsetup-pre.target
 Before=initrd-root-device.target
 Before=initrd-usr-fs.target initrd-root-fs.target
-Before=shutdown.target initrd-switch-root.target
-Conflicts=shutdown.target initrd-switch-root.target
+Before=shutdown.target
+Conflicts=shutdown.target
 ConditionVirtualization=!container
 ConditionDirectoryNotEmpty=/usr/lib/repart-bootdisk.d
 
@@ -23,7 +23,7 @@ ExecStart=/usr/bin/systemd-repart --definitions=/usr/lib/repart-bootdisk.d --emp
 # Wait for udev to settle partition updates to avoid a race where the device
 # node symlink for a partition label disappears while starting a systemd unit
 # depending on it.
-ExecStart=udevadm wait --settle -t 3 /dev/disk/by-id/spork-boot-disk
+ExecStartPost=-udevadm wait --settle -t 3 /dev/disk/by-id/spork-boot-disk
 
 # The tool returns 77 if there's no existing GPT partition table
 SuccessExitStatus=77

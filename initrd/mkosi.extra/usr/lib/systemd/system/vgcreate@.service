@@ -8,8 +8,8 @@ After=systemd-ask-password-plymouth.path
 After=initrd-init-disks.target
 Before=initrd-install-sys.target
 Before=initrd-root-device.target initrd-fs.target
-Before=shutdown.target initrd-switch-root.target
-Conflicts=shutdown.target initrd-switch-root.target
+Before=shutdown.target
+Conflicts=shutdown.target
 
 [Service]
 Type=oneshot

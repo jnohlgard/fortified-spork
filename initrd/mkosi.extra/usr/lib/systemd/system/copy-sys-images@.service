@@ -8,8 +8,9 @@ After=vgcreate@%i.service
 Before=refresh-veritytab-from-vg@%i.service
 Before=initrd-install-sys.target
 Before=initrd-root-device.target initrd-fs.target
-Before=shutdown.target initrd-switch-root.target
-Conflicts=shutdown.target initrd-switch-root.target
+ConditionPathExists=/usr/lib/initrd-release
+Before=shutdown.target
+Conflicts=shutdown.target
 RequiresMountsFor=%t/spork/sysimages
 
 [Service]

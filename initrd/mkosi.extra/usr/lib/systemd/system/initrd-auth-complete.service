@@ -5,8 +5,9 @@ Requires=initrd-auth.target
 After=initrd-auth.target
 Wants=wait-for-yubikey.target
 Before=wait-for-yubikey.target
-Before=shutdown.target initrd-switch-root.target
-Conflicts=shutdown.target initrd-switch-root.target
+Before=shutdown.target
+Conflicts=shutdown.target
+ConditionPathExists=/usr/lib/initrd-release
 # Next step after authentication has succeeded:
 OnSuccess=initrd-init-disks.target
 

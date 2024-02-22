@@ -6,8 +6,9 @@ Requires=initrd-auth-pre.target
 Before=initrd-auth-pre.target
 Requires=initrd-auth.target
 Before=initrd-auth.target
-Before=shutdown.target initrd-switch-root.target
-Conflicts=shutdown.target initrd-switch-root.target
+Before=shutdown.target
+Conflicts=shutdown.target
+ConditionPathExists=/usr/lib/initrd-release
 
 [Service]
 Type=oneshot

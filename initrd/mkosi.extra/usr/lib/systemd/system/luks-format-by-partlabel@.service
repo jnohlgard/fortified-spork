@@ -14,9 +14,10 @@ Before=blockdev@dev-mapper-%i.target
 Before=cryptsetup.target
 Before=initrd-root-device.target
 Before=initrd-usr-fs.target initrd-root-fs.target
-Before=shutdown.target initrd-switch-root.target
-Conflicts=shutdown.target initrd-switch-root.target
+Before=shutdown.target
+Conflicts=shutdown.target
 ConditionVirtualization=!container
+ConditionPathExists=/usr/lib/initrd-release
 
 [Service]
 Type=oneshot

@@ -6,8 +6,8 @@ After=%i.device
 Wants=cryptsetup-pre.target
 After=cryptsetup-pre.target
 Before=cryptsetup.target
-Before=shutdown.target initrd-switch-root.target
-Conflicts=shutdown.target initrd-switch-root.target
+Before=shutdown.target
+Conflicts=shutdown.target
 
 [Service]
 Type=oneshot

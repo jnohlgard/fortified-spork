@@ -4,9 +4,9 @@ DefaultDependencies=no
 After=initrd-install-sys.target
 Before=sysroot.mount
 Before=sysusr-usr.mount
-Before=shutdown.target initrd-switch-root.target
-Conflicts=shutdown.target initrd-switch-root.target
-OnSuccess=default.target
+Before=shutdown.target
+Conflicts=shutdown.target
+OnSuccess=initrd.target
 
 [Service]
 Type=oneshot
@@ -16,3 +16,4 @@ SyslogIdentifier=%N
 ExecStartPre=-systemctl daemon-reload
 ExecStartPre=-systemctl --no-block reset-failed
 ExecStart=sh -c "printf 'Done installing system images\n'"
+ExecStart=-systemctl daemon-reload

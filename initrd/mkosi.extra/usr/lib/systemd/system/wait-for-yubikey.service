@@ -5,8 +5,8 @@ Wants=systemd-udevd-kernel.socket
 After=systemd-udevd-kernel.socket
 After=initrd-auth.target
 Before=wait-for-yubikey.target
-Before=shutdown.target initrd-switch-root.target
-Conflicts=shutdown.target initrd-switch-root.target
+Before=shutdown.target
+Conflicts=shutdown.target
 
 [Service]
 Type=oneshot
