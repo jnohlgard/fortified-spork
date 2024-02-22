@@ -71,7 +71,7 @@ lvs "${target_vg}" || true
 printf 'Checking for /etc overlay backing volume\n'
 if ! lvdisplay --column "${target_vg}/${image_id}_etc"; then
   mkfs_mountpoint="$(mktemp -d -t overlay-etc.XXXXXXXX)"
-  lvcreate -v -ay \
+  lvcreate -v -ay -y \
     -L 500M \
     -n "${image_id}_etc" \
     "${target_vg}"
@@ -84,7 +84,7 @@ if ! lvdisplay --column "${target_vg}/${image_id}_etc"; then
 fi
 
 if ! lvdisplay --column "${target_vg}/${image_id}_var"; then
-  lvcreate -v -ay \
+  lvcreate -v -ay -y \
     -L 4G \
     -n "${image_id}_var" \
     "${target_vg}"
