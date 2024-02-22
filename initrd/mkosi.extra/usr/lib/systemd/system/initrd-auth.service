@@ -8,7 +8,6 @@ Requires=initrd-auth.target
 Before=initrd-auth.target
 Before=shutdown.target
 Conflicts=shutdown.target
-ConditionPathExists=/usr/lib/initrd-release
 
 [Service]
 Type=oneshot

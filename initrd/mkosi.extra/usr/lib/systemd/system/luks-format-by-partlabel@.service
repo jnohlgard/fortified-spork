@@ -17,7 +17,7 @@ Before=initrd-usr-fs.target initrd-root-fs.target
 Before=shutdown.target
 Conflicts=shutdown.target
 ConditionVirtualization=!container
-ConditionPathExists=/usr/lib/initrd-release
+ConditionPathExists=/etc/initrd-release
 
 [Service]
 Type=oneshot

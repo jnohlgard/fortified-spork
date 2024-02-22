@@ -7,7 +7,7 @@ Wants=wait-for-yubikey.target
 Before=wait-for-yubikey.target
 Before=shutdown.target
 Conflicts=shutdown.target
-ConditionPathExists=/usr/lib/initrd-release
+ConditionPathExists=/etc/initrd-release
 # Next step after authentication has succeeded:
 OnSuccess=initrd-init-disks.target
 

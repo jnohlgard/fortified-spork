@@ -9,7 +9,6 @@ Before=shutdown.target
 Conflicts=shutdown.target
 ConditionCredential=!initrd-totp-%I
 ConditionPathExists=!%t/credstore.encrypted/initrd-totp-%I
-ConditionPathExists=/usr/lib/initrd-release
 ConditionSecurity=tpm2
 RequiresMountsFor=%t/credstore.encrypted
 RequiresMountsFor=/efi/loader/credentials
